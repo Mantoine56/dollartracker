@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View } from 'react-native';
 
 export default function TabLayout() {
   const theme = useTheme();
@@ -10,17 +9,17 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.colors.background,
         },
-        headerTintColor: theme.colors.text.primary,
+        headerTintColor: theme.colors.onBackground,
         headerShadowVisible: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: theme.colors.grey[200],
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.surfaceVariant,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: theme.colors.primary.main,
-        tabBarInactiveTintColor: theme.colors.text.secondary,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
       }}
     >
       <Tabs.Screen

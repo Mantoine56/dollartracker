@@ -89,10 +89,10 @@ export default function HomeScreen() {
           <View style={styles.circleContainer}>
             <View style={styles.circle}>
               <View style={styles.innerCircle}>
-                <Text variant="displaySmall" style={styles.allowanceAmount}>
+                <Text variant="displayLarge" style={[styles.allowanceAmount, { fontSize: 36, fontWeight: 'bold' }]}>
                   ${dailyAllowance.toFixed(2)}
                 </Text>
-                <Text style={[
+                <Text variant="bodyMedium" style={[
                   styles.remainingAmount,
                   { color: theme.colors[allowanceStatus === 'success' ? 'success' : 'error'].main }
                 ]}>

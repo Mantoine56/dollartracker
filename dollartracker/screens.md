@@ -1,8 +1,9 @@
 # Dollartracker App - Screens and User Workflows
 
-## 1. Home Screen
+## 1. Home Screen ✅
 ### Description
 The Home Screen serves as the primary interface for users to track their daily spending and monitor their remaining allowance. It prominently displays today’s budget status and recent transactions.
+*Completed: December 30, 2024 11:39 AM EST*
 
 ### Components
 - **Header**:
@@ -166,4 +167,3 @@ Provides feedback when no data is available or errors occur.
 3. User takes action based on suggested steps.
 
 ---
-
