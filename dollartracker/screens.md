@@ -245,17 +245,45 @@ Handles user authentication and data synchronization with a beautiful and modern
 
 ---
 
-## 9. Empty States and Error Handling
+## 9. Empty States and Error Handling 
 ### Description
-Provides feedback when no data is available or errors occur.
+Provides feedback when no data is available or errors occur, with a reusable component that can be used throughout the app.
+**Status**: Completed on December 30, 2023
 
 ### Components
-- **Empty State Illustrations** with motivational text.
-- **Error Messages** with actionable suggestions.
+- **EmptyState Component**:
+  - Customizable icon from MaterialCommunityIcons
+  - Title and description text
+  - Optional action button
+  - Error state styling
+  - Responsive layout
+- **Example States**:
+  - No Transactions
+  - No Budget Set
+  - No Badges
+  - Network Error
+  - Session Expired
+- **Visual Elements**:
+  - Large, clear icons
+  - Clear typography hierarchy
+  - Action buttons for recovery
+  - Error-specific styling
+  - Consistent spacing and layout
 
 ### Workflow
-1. User encounters an empty state or error.
-2. App displays relevant illustration and message.
-3. User takes action based on suggested steps.
+1. Component detects empty state or error condition
+2. Displays appropriate illustration and message:
+   - Uses relevant icon for the context
+   - Shows clear, actionable message
+   - Provides recovery action when applicable
+3. User can:
+   - Understand the current state
+   - Take action to resolve the situation
+   - Navigate to relevant screens
 
----
+### Implementation Notes
+- Created reusable EmptyState component in `/components/feedback/EmptyState.tsx`
+- Added example screen in `/app/examples/empty-states.tsx`
+- Uses Material Design 3 theming
+- Supports both light and dark modes
+- Follows accessibility guidelines
