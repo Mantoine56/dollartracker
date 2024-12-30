@@ -185,7 +185,7 @@ export default function HomeScreen() {
         <FAB
           icon="plus"
           style={styles.fab}
-          onPress={() => {}}
+          onPress={() => router.push('/transaction/new')}
           color={theme.colors.primary.contrast}
         />
       </Screen>

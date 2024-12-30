@@ -1,6 +1,6 @@
 # Dollartracker App - Screens and User Workflows
 
-## 1. Home Screen ✅
+## 1. Home Screen 
 ### Description
 The Home Screen serves as the primary interface for users to track their daily spending and monitor their remaining allowance. It prominently displays today’s budget status and recent transactions.
 *Completed: December 30, 2024 11:39 AM EST*
@@ -27,9 +27,10 @@ The Home Screen serves as the primary interface for users to track their daily s
 
 ---
 
-## 2. Budget Setup Screen
+## 2. Budget Setup Screen 
 ### Description
 Allows users to define their budget for a chosen timeframe and calculates their daily allowance based on this input.
+*Completed: December 30, 2024 12:22 PM EST*
 
 ### Components
 - **Step 1**: Budget input (numeric fields).
@@ -46,9 +47,10 @@ Allows users to define their budget for a chosen timeframe and calculates their 
 
 ---
 
-## 3. Stats Dashboard
+## 3. Stats Dashboard 
 ### Description
 Provides an overview of the user’s financial stats with visualizations to track trends and analyze spending.
+*Completed: December 30, 2024 12:22 PM EST*
 
 ### Components
 - **Monthly Spending Progress**: Bar chart.
@@ -64,21 +66,28 @@ Provides an overview of the user’s financial stats with visualizations to trac
 
 ---
 
-## 4. Daily Transaction Entry
+## 4. Daily Transaction Entry 
 ### Description
 Screen for users to enter details about a transaction.
+**Status**: Completed on December 30, 2023
 
 ### Components
 - **Form Fields**:
-  - Amount.
-  - Category (dropdown).
-  - Notes (optional).
-  - Timestamp (auto-filled, editable).
+  - Amount (with currency symbol).
+  - Category selection with icons (Food, Transport, Shopping, Entertainment, Other).
+  - Notes field (optional, multiline).
+  - Timestamp (auto-filled with current time, editable via date picker).
+- Beautiful Material Design 3 UI with proper theming.
+- Input validation for required fields.
 - "Save Transaction" button.
 
 ### Workflow
 1. User taps the "+" button on the Home screen.
-2. User enters transaction details.
+2. User enters transaction details:
+   - Enters amount with decimal support
+   - Selects category via icon grid
+   - Optionally adds notes
+   - Can modify date/time if needed
 3. User saves the transaction.
 4. App updates daily and overall budget stats.
 

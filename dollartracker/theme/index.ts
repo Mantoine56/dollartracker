@@ -50,7 +50,7 @@ const fontConfig = {
   android: {
     regular: {
       fontFamily: 'System',
-      fontWeight: 'normal',
+      fontWeight: '400',
     },
     medium: {
       fontFamily: 'System',
@@ -80,35 +80,44 @@ const customColors = {
   onSecondary: '#FFFFFF',
   secondaryContainer: '#E3F2FD',
   onSecondaryContainer: '#001D36',
+  tertiary: '#7D5260',
+  onTertiary: '#FFFFFF',
+  tertiaryContainer: '#FFD8E4',
+  onTertiaryContainer: '#370B1E',
   error: '#FF4444',
   onError: '#FFFFFF',
   errorContainer: '#FF7777',
   onErrorContainer: '#410002',
   background: '#FFFFFF',
-  onBackground: '#1E1E1E',
+  onBackground: '#1C1B1F',
   surface: '#FFFFFF',
-  onSurface: '#1E1E1E',
+  onSurface: '#1C1B1F',
   surfaceVariant: '#F8F9FA',
-  onSurfaceVariant: '#666666',
-  outline: '#CED4DA',
-  outlineVariant: '#E9ECEF',
+  onSurfaceVariant: '#49454E',
+  outline: '#79747E',
+  outlineVariant: '#CAC4D0',
+  shadow: '#000000',
+  scrim: '#000000',
+  inverseSurface: '#313033',
+  inverseOnSurface: '#F4EFF4',
+  inversePrimary: '#D0BCFF',
+  elevation: {
+    level0: 'transparent',
+    level1: '#F7F2FA',
+    level2: '#F3EDF7',
+    level3: '#EFE9F4',
+    level4: '#EEE8F3',
+    level5: '#ECE6F1',
+  },
 };
 
-const baseFontConfig = Platform.select({
-  web: fontConfig.web,
-  ios: fontConfig.ios,
-  android: fontConfig.android,
-}) || fontConfig.ios;
-
-export const theme: MD3Theme = {
+export const theme = {
   ...MD3LightTheme,
   fonts: configureFonts({
-    config: {
-      ...baseFontConfig,
-    },
+    config: Platform.select(fontConfig),
   }),
   colors: {
     ...MD3LightTheme.colors,
     ...customColors,
   },
-};
+} satisfies MD3Theme;

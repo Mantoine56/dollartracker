@@ -50,6 +50,49 @@
   - Leverage deep linking and universal links for better user engagement.
   - Implement type-safe navigation with TypeScript.
 
+  Navigation Structure (Expo Router)
+  - Use Expo Router for file-based navigation: https://docs.expo.dev/routing/introduction/
+  - Follow the directory structure conventions:
+    * (tabs)/ for bottom tab navigation
+    * _layout.tsx for navigation configuration
+    * Modal screens should be placed in the root app/ directory
+    * Use Stack.Screen with presentation: 'modal' for modal screens
+  - Avoid placing modal screens inside (tabs)/ directory
+  - Configure navigation themes consistently with app theme
+  - Use proper screen nesting:
+    * Root layout (_layout.tsx) should handle both stack and tab navigation
+    * Tab layout ((tabs)/_layout.tsx) should only handle tab-specific screens
+
+  Theme Management
+  - Implement a centralized theme provider that:
+    * Properly merges MD3LightTheme with custom theme
+    * Provides consistent access to theme through useTheme hook
+    * Handles safe area insets
+  - Theme setup order:
+    1. Define theme configuration (colors, typography, etc.)
+    2. Create ThemeProvider component with proper nesting:
+       ```tsx
+       <SafeAreaProvider>
+         <PaperProvider theme={paperTheme}>
+           {children}
+         </PaperProvider>
+       </SafeAreaProvider>
+       ```
+    3. Apply theme at the root level before any navigation
+  - Always use theme.colors for styling to maintain consistency
+  - Test theme across all screens and components before deployment
+
+  Component Organization
+  - Organize screens based on navigation structure:
+    * /app/(tabs)/ - Tab-based screens
+    * /app/modals/ - Modal screens (optional directory)
+    * /app/_layout.tsx - Root navigation
+  - Keep modal screens separate from tab screens
+  - Use consistent navigation patterns:
+    * Bottom tabs for main navigation
+    * Modals for temporary UI like forms or setup wizards
+    * Stack navigation for nested flows
+
   State Management
   - Use React Context for theming and global state.
   - Leverage Supabase for data management and real-time updates.
