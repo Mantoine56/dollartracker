@@ -125,54 +125,123 @@ Allows users to view and filter their transaction history by timeframes or categ
 
 ---
 
-## 6. Incentives and Rewards Screen
+## 6. Incentives and Rewards Screen 
 ### Description
 Displays badges, levels, and progress to motivate users to stay within their budget.
+**Status**: Completed on December 30, 2023
 
 ### Components
-- **Badge Showcase**:
-  - Carousel of earned badges with icons and descriptions.
 - **Level Progress**:
-  - Horizontal progress bar with motivational labels.
+  - Current level display with icon and description
+  - Progress bar to next level
+  - Points tracking and remaining points display
+- **Badge Showcase**:
+  - Interactive carousel of badges
+  - Badge status (earned/in-progress)
+  - Progress tracking for unearned badges
+  - Earned date for completed badges
+- **Achievements Summary**:
+  - Total badges earned
+  - Current level
+  - Total points earned
+- **Visual Elements**:
+  - Beautiful Material Design 3 surfaces
+  - Animated progress bars
+  - Interactive carousel with pagination
+  - Custom icons for levels and badges
 
 ### Workflow
-1. User views badges and progress.
-2. App sends notifications when milestones are achieved.
+1. User views their current level and progress
+2. User can:
+   - Browse badges in the carousel
+   - Check progress on unearned badges
+   - View achievement statistics
+   - Track points needed for next level
+3. App provides visual feedback for progress
+4. Notifications for new achievements (to be implemented)
 
 ---
 
-## 7. Settings Screen
+## 7. Settings Screen 
 ### Description
 Provides users with options to customize their experience and manage preferences.
 
+**Status**: Completed on December 30, 2023
+
 ### Components
-- **Theme**: Toggle between light and dark mode.
-- **Notifications**: Toggle for budget updates and achievements.
-- **Export Preferences**: Select CSV or PDF format.
-- **Account Management**: Log in/log out, manage linked accounts.
+- **Budget Setup**:
+  - Quick access to budget configuration
+  - Daily and monthly budget limits
+  - Visual feedback with wallet icon
+- **Theme**:
+  - Toggle between light and dark mode
+  - Theme preview and customization
+  - Material Design 3 integration
+- **Notifications**:
+  - Budget updates toggle
+  - Achievement notifications toggle
+  - Granular control over notification types
+- **App Info**:
+  - Version information
+  - About section
+- **Visual Elements**:
+  - Material Design 3 surfaces
+  - Consistent iconography
+  - Interactive switches and buttons
+  - Clean section dividers
 
 ### Workflow
-1. User navigates to the Settings screen.
-2. User adjusts preferences as needed.
-3. User logs out or updates account information if necessary.
+1. User navigates to the Settings screen
+2. User can:
+   - Access budget setup
+   - Toggle dark mode
+   - Configure notification preferences
+   - View app information
+3. Changes are applied immediately
+4. Settings persist across app restarts
 
 ---
 
-## 8. Login/Signup Screen
+## 8. Login/Signup Screen 
 ### Description
-Handles user authentication and data synchronization.
+Handles user authentication and data synchronization with a beautiful and modern interface.
+
+**Status**: Completed on December 30, 2023
 
 ### Components
-- **Branded Splash Screen**.
+- **Branded Splash Screen**:
+  - Custom logo animation
+  - Gradient background
+  - App title and tagline
 - **Authentication Buttons**:
-  - Google Sign-In.
-  - Apple Sign-In.
-- **Error Handling**: Friendly messages for failed login attempts.
+  - Google Sign-In with official branding
+  - Apple Sign-In (iOS only) with system button
+  - Material Design 3 styling
+- **Error Handling**:
+  - Friendly error messages
+  - Visual error indicators
+  - Clear recovery actions
+- **Visual Elements**:
+  - Linear gradient background
+  - Elevated surfaces
+  - Consistent iconography
+  - Platform-specific adaptations
+  - Proper spacing and typography
 
 ### Workflow
-1. User opens the app for the first time.
-2. User selects a login option.
-3. App authenticates the user and syncs data.
+1. User opens the app for the first time
+2. User is presented with:
+   - App branding and value proposition
+   - Authentication options
+   - Terms of service notice
+3. User selects a login option:
+   - Google Sign-In for all platforms
+   - Apple Sign-In for iOS devices
+4. App handles authentication:
+   - Shows loading state
+   - Displays errors if they occur
+   - Redirects to main app on success
+5. Data syncs automatically after login
 
 ---
 

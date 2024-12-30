@@ -53,6 +53,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="incentives"
+        options={{
+          title: 'Rewards',
+          tabBarLabel: 'Rewards',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="trophy" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
