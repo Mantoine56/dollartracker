@@ -93,21 +93,35 @@ Screen for users to enter details about a transaction.
 
 ---
 
-## 5. History Screen
+## 5. History Screen 
 ### Description
 Allows users to view and filter their transaction history by timeframes or categories.
+**Status**: Completed on December 30, 2023
 
 ### Components
 - **Filter Bar**:
-  - Dropdowns for day, week, month, and category.
+  - Time frame selector (Today, This Week, This Month, Custom)
+  - Category filter with icon menu
+  - Search bar for transactions
 - **Transaction List**:
-  - Grouped by date.
-  - Includes search functionality.
+  - Grouped by date with daily totals
+  - Category icons and colors
+  - Transaction details including:
+    - Amount
+    - Category with icon
+    - Notes (if any)
+    - Time of transaction
+  - Material Design 3 surfaces and elevation
 
 ### Workflow
-1. User navigates to the History screen.
-2. User selects filters to narrow the displayed transactions.
-3. User views transaction details.
+1. User navigates to the History screen
+2. User can:
+   - Search for specific transactions
+   - Filter by time frame using segmented buttons
+   - Filter by category using the category menu
+   - View transactions grouped by date
+   - See daily spending totals
+3. Transactions show full details including time and notes
 
 ---
 
