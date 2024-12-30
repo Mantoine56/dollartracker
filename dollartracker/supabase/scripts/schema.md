@@ -31,15 +31,6 @@ CREATE TABLE daily_transactions (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE badges (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    description TEXT,
-    milestone_id UUID REFERENCES milestones(id) ON DELETE SET NULL,
-    earned_at TIMESTAMP DEFAULT NOW()
-);
-
 CREATE TABLE milestones (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -47,6 +38,15 @@ CREATE TABLE milestones (
     milestone_date DATE NOT NULL,
     progress_percentage NUMERIC DEFAULT 0 CHECK (progress_percentage >= 0 AND progress_percentage <= 100),
     created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE badges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    milestone_id UUID REFERENCES milestones(id) ON DELETE SET NULL,
+    earned_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE settings (
@@ -120,32 +120,3 @@ CREATE TRIGGER update_settings_updated_at
 BEFORE UPDATE ON settings
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
-
--- Row Level Security (RLS)
-CREATE POLICY users_select_policy ON users FOR SELECT USING (id = current_user_id());
-CREATE POLICY users_update_policy ON users FOR UPDATE USING (id = current_user_id());
-CREATE POLICY budgets_select_policy ON budgets FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY budgets_insert_policy ON budgets FOR INSERT WITH CHECK (user_id = current_user_id());
-CREATE POLICY budgets_update_policy ON budgets FOR UPDATE USING (user_id = current_user_id());
-CREATE POLICY budgets_delete_policy ON budgets FOR DELETE USING (user_id = current_user_id());
-CREATE POLICY daily_transactions_select_policy ON daily_transactions FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY daily_transactions_insert_policy ON daily_transactions FOR INSERT WITH CHECK (user_id = current_user_id());
-CREATE POLICY daily_transactions_update_policy ON daily_transactions FOR UPDATE USING (user_id = current_user_id());
-CREATE POLICY daily_transactions_delete_policy ON daily_transactions FOR DELETE USING (user_id = current_user_id());
-CREATE POLICY badges_select_policy ON badges FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY milestones_select_policy ON milestones FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY settings_select_policy ON settings FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY settings_insert_policy ON settings FOR INSERT WITH CHECK (user_id = current_user_id());
-CREATE POLICY settings_update_policy ON settings FOR UPDATE USING (user_id = current_user_id());
-CREATE POLICY stats_select_policy ON stats FOR SELECT USING (user_id = current_user_id());
-CREATE POLICY rewards_select_policy ON rewards FOR SELECT USING (user_id = current_user_id());
-
--- Enable RLS on tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE daily_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE badges ENABLE ROW LEVEL SECURITY;
-ALTER TABLE milestones ENABLE ROW LEVEL SECURITY;
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rewards ENABLE ROW LEVEL SECURITY;
