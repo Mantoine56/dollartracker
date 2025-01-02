@@ -3,37 +3,29 @@ import { StyleSheet, ViewStyle } from 'react-native';
 import { Button as PaperButton, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-type ButtonProps = {
-  onPress: () => void;
-  label: string;
-  mode?: 'contained' | 'outlined' | 'text';
+type ButtonProps = React.ComponentProps<typeof PaperButton> & {
   size?: 'small' | 'medium' | 'large';
-  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
-  disabled?: boolean;
-  loading?: boolean;
-  style?: ViewStyle;
   variant?: 'primary' | 'success' | 'warning' | 'error';
 };
 
 export const Button = ({
-  onPress,
-  label,
   mode = 'contained',
   size = 'medium',
-  icon,
   disabled = false,
   loading = false,
   style,
   variant = 'primary',
+  children,
+  ...props
 }: ButtonProps) => {
   const theme = useTheme();
 
   const getButtonColor = () => {
     switch (variant) {
-      case 'success': return theme.colors.success.main;
-      case 'warning': return theme.colors.warning.main;
-      case 'error': return theme.colors.error.main;
-      default: return theme.colors.primary.main;
+      case 'success': return theme.colors.success;
+      case 'warning': return theme.colors.warning;
+      case 'error': return theme.colors.error;
+      default: return theme.colors.primary;
     }
   };
 
@@ -55,15 +47,12 @@ export const Button = ({
 
   return (
     <PaperButton
-      onPress={onPress}
       mode={mode}
-      icon={icon}
       disabled={disabled}
       loading={loading}
       style={[
         styles.button,
         getButtonSize(),
-        { borderRadius: theme.borderRadius.md },
         mode === 'contained' && { backgroundColor: getButtonColor() },
         mode === 'outlined' && { borderColor: getButtonColor() },
         style,
@@ -74,8 +63,9 @@ export const Button = ({
         mode !== 'contained' && { color: getButtonColor() },
       ]}
       contentStyle={styles.content}
+      {...props}
     >
-      {label}
+      {children}
     </PaperButton>
   );
 };

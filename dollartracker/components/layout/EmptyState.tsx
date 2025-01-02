@@ -40,44 +40,36 @@ export const EmptyState = ({
           style={[
             styles.iconContainer,
             {
-              backgroundColor: theme.colors.grey[100],
+              backgroundColor: theme.colors.surfaceVariant,
             },
           ]}
         >
           <MaterialCommunityIcons
             name={icon}
             size={48}
-            color={theme.colors.text.secondary}
+            color={theme.colors.onSurfaceVariant}
           />
         </View>
       )}
-
-      <Text
-        variant="headlineSmall"
-        style={[styles.title, { color: theme.colors.text.primary }]}
-      >
+      <Text variant="headlineSmall" style={styles.title}>
         {title}
       </Text>
-
       {description && (
         <Text
           variant="bodyLarge"
-          style={[
-            styles.description,
-            { color: theme.colors.text.secondary },
-          ]}
+          style={[styles.description, { color: theme.colors.onSurfaceVariant }]}
         >
           {description}
         </Text>
       )}
-
       {action && (
         <Button
-          label={action.label}
-          onPress={action.onPress}
           mode={action.mode || 'contained'}
+          onPress={action.onPress}
           style={styles.button}
-        />
+        >
+          {action.label}
+        </Button>
       )}
     </View>
   );
@@ -88,24 +80,24 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 16,
   },
   iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     textAlign: 'center',
     marginBottom: 8,
-    fontWeight: '600',
   },
   description: {
     textAlign: 'center',
     marginBottom: 24,
+    paddingHorizontal: 32,
   },
   button: {
     minWidth: 200,

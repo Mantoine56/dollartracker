@@ -38,13 +38,22 @@ CREATE TABLE categories (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Note: Default categories are now created per-user
--- When a new user is created, the following default categories are automatically added:
+-- Note: Default categories are now created per-user via Edge Function
+-- When a new user signs up, the following default categories are automatically added:
 -- 1. Food (icon: food)
 -- 2. Entertainment (icon: movie)
 -- 3. Shopping (icon: cart)
 -- 4. Transport (icon: car)
--- 5. Other (icon: dots-horizontal)
+-- 5. Bills (icon: file-document)
+-- 6. Health (icon: medical-bag)
+-- 7. Other (icon: dots-horizontal)
+
+-- Each category is created with:
+-- - Unique UUID
+-- - User's ID as foreign key
+-- - Category name
+-- - MaterialCommunityIcons icon name
+-- - is_system set to true for default categories
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

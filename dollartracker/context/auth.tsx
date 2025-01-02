@@ -75,6 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
 
+      if (data.user) {
+        // Call our Edge Function to create default categories
+        const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/create-default-categories`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user_id: data.user.id }),
+        });
+
+        if (!response.ok) {
+          console.warn('Failed to create default categories:', await response.text());
+        }
+      }
+
       return { needsEmailConfirmation: true };
     } catch (error: any) {
       console.error('Error signing up with email:', error);
