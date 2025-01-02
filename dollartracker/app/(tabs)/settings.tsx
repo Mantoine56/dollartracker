@@ -1,20 +1,17 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { StyleSheet, ScrollView, Alert } from 'react-native';
 import { 
   Text, 
   useTheme, 
-  Button, 
   List, 
   Switch, 
   Divider,
-  Surface,
-  IconButton,
   Avatar
 } from 'react-native-paper';
-import { Screen } from '../../components/layout';
 import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/auth';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Screen } from '../../components/layout';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -49,179 +46,134 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <ScrollView style={styles.scrollView}>
-        {/* User Profile Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title={user?.email || 'Guest User'}
-                description="Manage your account"
-                left={() => (
-                  <Avatar.Text 
-                    size={48} 
-                    label={user?.email ? user.email[0].toUpperCase() : 'G'}
-                    style={{ backgroundColor: theme.colors.primary }}
-                  />
-                )}
-              />
-              {user && (
-                <>
-                  <Divider />
-                  <List.Item
-                    title="Email"
-                    description={user.email}
-                    left={props => <List.Icon {...props} icon="email" />}
-                  />
-                  <Divider />
-                  <List.Item
-                    title="User ID"
-                    description={user.id}
-                    left={props => <List.Icon {...props} icon="identifier" />}
-                  />
-                </>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        contentContainerStyle={styles.content}
+      >
+        <Animated.View entering={FadeIn.duration(300)}>
+          <Text variant="headlineMedium" style={styles.title}>Settings</Text>
+          
+          <List.Section>
+            <List.Subheader>Budget Management</List.Subheader>
+            <List.Item
+              title="Budget Setup"
+              description="Configure your income, expenses, and savings targets"
+              left={props => <List.Icon {...props} icon="calculator" />}
+              onPress={() => router.push('/modals/budget-wizard')}
+              right={props => <List.Icon {...props} icon="chevron-right" />}
+            />
+            <Divider />
+          </List.Section>
+
+          <List.Section>
+            <List.Subheader>User Profile</List.Subheader>
+            <List.Item
+              title={user?.email || 'Guest User'}
+              description="Manage your account"
+              left={() => (
+                <Avatar.Text 
+                  size={48} 
+                  label={user?.email ? user.email[0].toUpperCase() : 'G'}
+                  style={{ backgroundColor: theme.colors.primary }}
+                />
               )}
-            </View>
-          </Surface>
-        </View>
+            />
+            {user && (
+              <>
+                <Divider />
+                <List.Item
+                  title="Email"
+                  description={user.email}
+                  left={props => <List.Icon {...props} icon="email" />}
+                />
+                <Divider />
+                <List.Item
+                  title="User ID"
+                  description={user.id}
+                  left={props => <List.Icon {...props} icon="identifier" />}
+                />
+              </>
+            )}
+          </List.Section>
 
-        {/* Budget Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title="Budget Setup"
-                description="Configure your daily and monthly budget limits"
-                left={props => <List.Icon {...props} icon="wallet" />}
-                right={props => (
-                  <IconButton
-                    {...props}
-                    icon="chevron-right"
-                    onPress={() => router.push('/setup')}
-                  />
-                )}
-              />
-            </View>
-          </Surface>
-        </View>
+          <List.Section>
+            <List.Subheader>Theme</List.Subheader>
+            <List.Item
+              title="Dark Mode"
+              description="Enable dark theme"
+              left={props => <List.Icon {...props} icon="moon-waning-crescent" />}
+              right={props => (
+                <Switch
+                  value={isDarkMode}
+                  onValueChange={setIsDarkMode}
+                  color={theme.colors.primary}
+                />
+              )}
+            />
+          </List.Section>
 
-        {/* Theme Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title="Theme"
-                description="Customize app appearance"
-                left={props => <List.Icon {...props} icon="theme-light-dark" />}
-              />
-              <Divider />
-              <List.Item
-                title="Dark Mode"
-                description="Enable dark theme"
-                left={props => <List.Icon {...props} icon="moon-waning-crescent" />}
-                right={props => (
-                  <Switch
-                    value={isDarkMode}
-                    onValueChange={setIsDarkMode}
-                    color={theme.colors.primary}
-                  />
-                )}
-              />
-            </View>
-          </Surface>
-        </View>
+          <List.Section>
+            <List.Subheader>Notifications</List.Subheader>
+            <List.Item
+              title="Budget Updates"
+              description="Get notified about your spending"
+              left={props => <List.Icon {...props} icon="cash" />}
+              right={props => (
+                <Switch
+                  value={notifyBudget}
+                  onValueChange={setNotifyBudget}
+                  color={theme.colors.primary}
+                />
+              )}
+            />
+            <Divider />
+            <List.Item
+              title="Achievements"
+              description="Get notified about your milestones"
+              left={props => <List.Icon {...props} icon="trophy" />}
+              right={props => (
+                <Switch
+                  value={notifyAchievements}
+                  onValueChange={setNotifyAchievements}
+                  color={theme.colors.primary}
+                />
+              )}
+            />
+          </List.Section>
 
-        {/* Notifications Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title="Notifications"
-                description="Manage app notifications"
-                left={props => <List.Icon {...props} icon="bell" />}
-              />
-              <Divider />
-              <List.Item
-                title="Budget Updates"
-                description="Get notified about your spending"
-                left={props => <List.Icon {...props} icon="cash" />}
-                right={props => (
-                  <Switch
-                    value={notifyBudget}
-                    onValueChange={setNotifyBudget}
-                    color={theme.colors.primary}
-                  />
-                )}
-              />
-              <Divider />
-              <List.Item
-                title="Achievements"
-                description="Get notified about your milestones"
-                left={props => <List.Icon {...props} icon="trophy" />}
-                right={props => (
-                  <Switch
-                    value={notifyAchievements}
-                    onValueChange={setNotifyAchievements}
-                    color={theme.colors.primary}
-                  />
-                )}
-              />
-            </View>
-          </Surface>
-        </View>
+          <List.Section>
+            <List.Subheader>Account Actions</List.Subheader>
+            <List.Item
+              title="Sign Out"
+              description="Sign out of your account"
+              left={props => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
+              onPress={confirmLogout}
+              right={props => <List.Icon {...props} icon="chevron-right" color={theme.colors.error} />}
+            />
+          </List.Section>
 
-        {/* Account Actions Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title="Sign Out"
-                description="Sign out of your account"
-                left={props => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
-                onPress={confirmLogout}
-                right={props => (
-                  <IconButton
-                    {...props}
-                    icon="chevron-right"
-                    iconColor={theme.colors.error}
-                  />
-                )}
-              />
-            </View>
-          </Surface>
-        </View>
-
-        {/* App Info Section */}
-        <View style={styles.sectionWrapper}>
-          <Surface style={styles.section} elevation={1}>
-            <View style={styles.sectionContent}>
-              <List.Item
-                title="About"
-                description="App version 1.0.0"
-                left={props => <List.Icon {...props} icon="information" />}
-              />
-            </View>
-          </Surface>
-        </View>
+          <List.Section>
+            <List.Subheader>App Info</List.Subheader>
+            <List.Item
+              title="About"
+              description="App version 1.0.0"
+              left={props => <List.Icon {...props} icon="information" />}
+            />
+          </List.Section>
+        </Animated.View>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
     flex: 1,
   },
-  sectionWrapper: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    overflow: 'hidden',
+  content: {
+    padding: 16,
   },
-  section: {
-    borderRadius: 8,
-  },
-  sectionContent: {
-    paddingVertical: 8,
+  title: {
+    marginBottom: 16,
   },
 });

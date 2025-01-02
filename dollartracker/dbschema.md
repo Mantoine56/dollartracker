@@ -64,16 +64,109 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Update budgets table to include new fields
+DROP TABLE IF EXISTS budgets;
 CREATE TABLE budgets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    budget_amount NUMERIC NOT NULL,
-    budget_period TEXT CHECK (budget_period IN ('monthly', 'weekly', 'biweekly')) NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
+    income_amount NUMERIC NOT NULL,
+    income_frequency TEXT CHECK (income_frequency IN ('weekly', 'biweekly', 'monthly')) NOT NULL,
+    fixed_expenses NUMERIC NOT NULL,
+    savings_target NUMERIC NOT NULL,
+    spending_budget NUMERIC NOT NULL,
+    daily_allowance NUMERIC NOT NULL,
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '1 month'),
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT valid_amounts CHECK (
+        income_amount > 0 AND
+        fixed_expenses >= 0 AND
+        savings_target >= 0 AND
+        spending_budget >= 0 AND
+        daily_allowance >= 0 AND
+        (fixed_expenses + savings_target) <= income_amount
+    )
 );
+
+-- Add indexes for better query performance
+CREATE INDEX budgets_user_id_idx ON budgets(user_id);
+CREATE INDEX budgets_date_range_idx ON budgets(user_id, start_date, end_date);
+
+-- Add RLS policies for budgets
+CREATE POLICY budgets_select_policy ON budgets 
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY budgets_insert_policy ON budgets 
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY budgets_update_policy ON budgets 
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY budgets_delete_policy ON budgets 
+    FOR DELETE USING (user_id = auth.uid());
+
+-- Add trigger for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_budgets_updated_at
+    BEFORE UPDATE ON budgets
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Add function to calculate daily allowance
+CREATE OR REPLACE FUNCTION calculate_daily_allowance(
+    p_income_amount NUMERIC,
+    p_income_frequency TEXT,
+    p_fixed_expenses NUMERIC,
+    p_savings_target NUMERIC
+) RETURNS NUMERIC AS $$
+DECLARE
+    monthly_income NUMERIC;
+    days_in_month NUMERIC := 30.4375; -- Average days in a month
+BEGIN
+    -- Convert income to monthly
+    CASE p_income_frequency
+        WHEN 'weekly' THEN monthly_income := p_income_amount * 52 / 12
+        WHEN 'biweekly' THEN monthly_income := p_income_amount * 26 / 12
+        ELSE monthly_income := p_income_amount
+    END;
+    
+    -- Calculate and return daily allowance
+    RETURN (monthly_income - p_fixed_expenses - p_savings_target) / days_in_month;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add view for budget summaries
+CREATE OR REPLACE VIEW budget_summaries AS
+SELECT 
+    user_id,
+    income_amount,
+    income_frequency,
+    fixed_expenses,
+    savings_target,
+    spending_budget,
+    daily_allowance,
+    start_date,
+    end_date
+FROM budgets
+WHERE end_date >= CURRENT_DATE
+ORDER BY start_date DESC;
+
+-- Grant permissions
+GRANT SELECT ON budget_summaries TO authenticated;
+GRANT ALL ON budgets TO authenticated;
+GRANT EXECUTE ON FUNCTION calculate_daily_allowance TO authenticated;
+
+COMMENT ON TABLE budgets IS 'Stores user budget information including income, expenses, and calculated allowances';
+COMMENT ON VIEW budget_summaries IS 'Provides a summary view of active budgets for users';
+COMMENT ON FUNCTION calculate_daily_allowance IS 'Calculates daily spending allowance based on income, expenses, and savings';
 
 CREATE TABLE daily_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from '../context/auth';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../lib/query-client';
 import { View } from 'react-native';
-import { Slot } from 'expo-router';
+import { Stack, Slot } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
@@ -35,9 +35,19 @@ export default function RootLayout() {
           <NavigationThemeProvider value={navigationTheme}>
             <SafeAreaProvider>
               <PaperProvider theme={paperTheme}>
-                <View style={{ flex: 1 }}>
-                  <ProtectedRoute />
-                </View>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="modals"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'modal',
+                    }}
+                  />
+                </Stack>
               </PaperProvider>
             </SafeAreaProvider>
           </NavigationThemeProvider>
