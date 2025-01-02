@@ -1,5 +1,5 @@
 import { View, StyleSheet, Animated } from 'react-native';
-import { Text, Surface, useTheme, IconButton, Icon, FAB } from 'react-native-paper';
+import { Text, Surface, useTheme, IconButton, Icon, Portal, Modal } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,9 @@ import {
   ToastProvider,
   ScrollView
 } from '../../components/layout';
+import { TransactionForm } from '../../components/transactions/TransactionForm';
+import { FAB } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Transaction = {
   id: string;
@@ -24,9 +27,11 @@ type Transaction = {
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isLoading] = useState(false);
   const [selectedDate] = useState(new Date());
   const [progressAnimation] = useState(new Animated.Value(0));
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
 
   const dailyAllowance = 50.00;
   const spent = 70.99;
@@ -184,10 +189,10 @@ export default function HomeScreen() {
 
         <FAB
           icon="plus"
-          style={styles.fab}
           onPress={() => router.push('/transaction/new')}
-          color={theme.colors.primary.contrast}
+          style={[styles.fab, { bottom: insets.bottom + 16 }]}
         />
+
       </Screen>
     </ToastProvider>
   );
@@ -340,16 +345,16 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 16,
-    bottom: 16,
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#4285F4',
     borderRadius: 28,
-    elevation: 6,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 3,
+      height: 2,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 1,
   },
 });

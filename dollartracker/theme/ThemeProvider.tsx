@@ -1,29 +1,21 @@
 import React from 'react';
 import { PaperProvider } from 'react-native-paper';
-import { theme } from './index';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { paperTheme, navigationTheme } from './theme.config';
 
-const navigationTheme = {
-  dark: false,
-  colors: {
-    primary: theme.colors.primary,
-    background: theme.colors.background,
-    card: theme.colors.surface,
-    text: theme.colors.onSurface,
-    border: theme.colors.outline,
-    notification: theme.colors.error,
-  },
-};
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const colorScheme = useColorScheme();
 
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <SafeAreaProvider>
-        <PaperProvider theme={theme}>
+        <PaperProvider theme={paperTheme}>
           {children}
         </PaperProvider>
       </SafeAreaProvider>

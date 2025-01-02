@@ -97,23 +97,27 @@ export const transactionService = {
   async addTransaction(
     userId: string,
     amount: number,
-    category?: string,
-    notes?: string
+    category_id?: string,
+    notes?: string,
+    transaction_time?: Date
   ): Promise<DailyTransaction | null> {
+    // Skip user verification since the user is already authenticated through Supabase Auth
+    // If they have a valid session, they exist in auth.users
     const { data, error } = await supabase
       .from('daily_transactions')
       .insert({
         user_id: userId,
         amount,
-        category,
+        category_id,
         notes,
+        transaction_time: transaction_time || new Date().toISOString(),
       })
       .select()
       .single();
 
     if (error) {
       console.error('Error adding transaction:', error);
-      return null;
+      throw error;
     }
 
     return data;

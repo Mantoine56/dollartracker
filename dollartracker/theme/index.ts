@@ -1,4 +1,4 @@
-import { MD3LightTheme, configureFonts } from 'react-native-paper';
+import { MD3LightTheme, configureFonts, ThemeProvider } from 'react-native-paper';
 import type { MD3Theme } from 'react-native-paper';
 import { Platform } from 'react-native';
 
@@ -49,24 +49,24 @@ const fontConfig = {
   },
   android: {
     regular: {
-      fontFamily: 'System',
-      fontWeight: '400',
+      fontFamily: 'sans-serif',
+      fontWeight: 'normal',
     },
     medium: {
-      fontFamily: 'System',
-      fontWeight: '500',
+      fontFamily: 'sans-serif-medium',
+      fontWeight: 'normal',
     },
     light: {
-      fontFamily: 'System',
-      fontWeight: '300',
+      fontFamily: 'sans-serif-light',
+      fontWeight: 'normal',
     },
     thin: {
-      fontFamily: 'System',
-      fontWeight: '100',
+      fontFamily: 'sans-serif-thin',
+      fontWeight: 'normal',
     },
     bold: {
-      fontFamily: 'System',
-      fontWeight: '700',
+      fontFamily: 'sans-serif',
+      fontWeight: 'bold',
     },
   },
 };
@@ -111,7 +111,7 @@ const customColors = {
   },
 };
 
-export const theme = {
+export const theme: MD3Theme = {
   ...MD3LightTheme,
   fonts: configureFonts({
     config: Platform.select(fontConfig),
@@ -120,4 +120,6 @@ export const theme = {
     ...MD3LightTheme.colors,
     ...customColors,
   },
-} satisfies MD3Theme;
+};
+
+export { ThemeProvider } from './ThemeProvider';

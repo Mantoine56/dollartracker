@@ -2,7 +2,13 @@
 
 /**
  * Database Schema with TypeScript Support
- * Last Updated: December 30, 2023
+ * Last Updated: January 2, 2025
+ * 
+ * Key Features:
+ * - User-specific categories with default system categories
+ * - Transaction tracking with category associations
+ * - Budget management
+ * - Rewards and milestones system
  */
 
 -- Enable UUID generation
@@ -25,23 +31,20 @@ CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    icon TEXT,
+    icon TEXT NOT NULL, -- MaterialCommunityIcons name
     color TEXT,
-    is_system BOOLEAN DEFAULT FALSE,
+    is_system BOOLEAN DEFAULT FALSE, -- Indicates if this is a default category
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Category spending limits
-CREATE TABLE spending_limits (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
-    amount NUMERIC NOT NULL,
-    period TEXT CHECK (period IN ('daily', 'weekly', 'monthly')) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
+-- Note: Default categories are now created per-user
+-- When a new user is created, the following default categories are automatically added:
+-- 1. Food (icon: food)
+-- 2. Entertainment (icon: movie)
+-- 3. Shopping (icon: cart)
+-- 4. Transport (icon: car)
+-- 5. Other (icon: dots-horizontal)
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,7 +70,7 @@ CREATE TABLE daily_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     transaction_time TIMESTAMP NOT NULL DEFAULT NOW(),
-    amount NUMERIC NOT NULL,
+    amount NUMERIC NOT NULL CHECK (amount > 0), -- Ensure positive amount
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     notes TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -124,6 +127,26 @@ CREATE TABLE rewards (
     personalized_message TEXT, -- Stores custom messages for users
     earned_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE spending_limits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+    amount NUMERIC NOT NULL,
+    period TEXT CHECK (period IN ('daily', 'weekly', 'monthly')) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Transaction Category View
+CREATE OR REPLACE VIEW transaction_with_category AS
+SELECT 
+    t.*,
+    c.name as category_name,
+    c.icon as category_icon,
+    c.color as category_color
+FROM daily_transactions t
+LEFT JOIN categories c ON t.category_id = c.id;
 
 -- Helper Views and Functions
 
@@ -324,14 +347,3 @@ LEFT JOIN daily_transactions dt ON
         WHEN 'monthly' THEN dt.transaction_time >= date_trunc('month', CURRENT_DATE)
     END
 GROUP BY sl.user_id, c.name, sl.amount, sl.period;
-
--- Default system categories
-INSERT INTO categories (name, icon, color, is_system) VALUES
-('Food & Dining', 'food', '#FF9800', true),
-('Transportation', 'car', '#2196F3', true),
-('Shopping', 'shopping-cart', '#4CAF50', true),
-('Bills & Utilities', 'receipt', '#9C27B0', true),
-('Entertainment', 'movie', '#E91E63', true),
-('Health', 'medical-bag', '#00BCD4', true),
-('Travel', 'airplane', '#795548', true),
-('Other', 'dots-horizontal', '#607D8B', true);

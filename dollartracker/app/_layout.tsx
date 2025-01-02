@@ -1,35 +1,28 @@
-import { Slot, Stack, useRouter, useSegments } from 'expo-router';
-import { ThemeProvider } from '../theme/ThemeProvider';
-import { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../context/auth';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../lib/query-client';
+import { View } from 'react-native';
+import { Slot } from 'expo-router';
+import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { paperTheme, navigationTheme } from '../theme/theme.config';
 
 // Suppress specific warnings if needed
 LogBox.ignoreLogs([
-  'Warning: Failed prop type',
-  'Non-serializable values were found in the navigation state',
+  'Warning: ...',
+  // Add other warnings to ignore
 ]);
 
-// Handle protected routes
 function ProtectedRoute() {
-  const { user, loading } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (loading) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!user && !inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
-      // Redirect to home if authenticated and trying to access auth screens
-      router.replace('/(tabs)');
-    }
-  }, [user, loading, segments]);
+  if (!user) {
+    // Redirect to login if not authenticated
+    return <Slot />;
+  }
 
   return <Slot />;
 }
@@ -37,11 +30,19 @@ function ProtectedRoute() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <ThemeProvider>
-          <ProtectedRoute />
-        </ThemeProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <NavigationThemeProvider value={navigationTheme}>
+            <SafeAreaProvider>
+              <PaperProvider theme={paperTheme}>
+                <View style={{ flex: 1 }}>
+                  <ProtectedRoute />
+                </View>
+              </PaperProvider>
+            </SafeAreaProvider>
+          </NavigationThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

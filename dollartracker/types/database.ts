@@ -28,7 +28,7 @@ export interface DailyTransaction {
   user_id: string;
   transaction_time: string;
   amount: number;
-  category: string | null;
+  category_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
