@@ -281,6 +281,91 @@ export const statsService = {
 
     return data;
   },
+
+  async getSpendingByTimeframe(userId: string, timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
+    const now = new Date();
+    let queryStartDate: Date;
+    let queryEndDate: Date = now;
+
+    if (timeframe === 'week') {
+      queryStartDate = new Date(now);
+      queryStartDate.setDate(now.getDate() - 7);
+    } else if (timeframe === 'month') {
+      queryStartDate = new Date(now);
+      queryStartDate.setMonth(now.getMonth() - 1);
+    } else {
+      queryStartDate = startDate || new Date(now.setMonth(now.getMonth() - 1));
+      queryEndDate = endDate || now;
+    }
+
+    const { data, error } = await supabase
+      .from('daily_transactions')
+      .select(`
+        amount,
+        transaction_time,
+        categories (
+          name,
+          icon,
+          color
+        )
+      `)
+      .eq('user_id', userId)
+      .gte('transaction_time', queryStartDate.toISOString())
+      .lte('transaction_time', queryEndDate.toISOString())
+      .order('transaction_time', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching spending data:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async getSpendingByCategory(userId: string, timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
+    const now = new Date();
+    let queryStartDate: Date;
+    let queryEndDate: Date = now;
+
+    if (timeframe === 'week') {
+      queryStartDate = new Date(now);
+      queryStartDate.setDate(now.getDate() - 7);
+    } else if (timeframe === 'month') {
+      queryStartDate = new Date(now);
+      queryStartDate.setMonth(now.getMonth() - 1);
+    } else {
+      queryStartDate = startDate || new Date(now.setMonth(now.getMonth() - 1));
+      queryEndDate = endDate || now;
+    }
+
+    const { data, error } = await supabase
+      .rpc('get_spending_by_category', {
+        p_user_id: userId,
+        p_start_date: queryStartDate.toISOString(),
+        p_end_date: queryEndDate.toISOString()
+      });
+
+    if (error) {
+      console.error('Error fetching category spending:', error);
+      return null;
+    }
+
+    return data;
+  },
+
+  async getDailySpendingPatterns(userId: string) {
+    const { data, error } = await supabase
+      .rpc('get_daily_spending_patterns', {
+        p_user_id: userId
+      });
+
+    if (error) {
+      console.error('Error fetching spending patterns:', error);
+      return null;
+    }
+
+    return data;
+  }
 };
 
 /**

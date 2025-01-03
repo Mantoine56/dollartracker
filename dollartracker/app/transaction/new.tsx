@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Platform, Pressable } from 'react-native';
-import { TextInput, Button, useTheme, Surface, Text, Snackbar, IconButton } from 'react-native-paper';
+import { TextInput, Button, useTheme, Surface, Text, Snackbar, IconButton, Portal, Modal } from 'react-native-paper';
 import { Link } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { Screen } from '../../components/layout';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAddTransaction } from '../../lib/enhanced-hooks';
 import { format } from 'date-fns';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useAuth } from '../../context/auth';
 import { supabase } from '../../lib/supabase';
 
@@ -92,10 +92,17 @@ export default function NewTransactionScreen() {
     fetchCategories();
   }, [user]);
 
-  const handleDateChange = (_: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setDate(selectedDate);
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    setDate(currentDate);
+    
+    if (Platform.OS === 'ios') {
+      setShowDatePicker(false);
     }
   };
 
@@ -145,12 +152,8 @@ export default function NewTransactionScreen() {
   };
 
   return (
-    <Screen contentStyle={styles.container}>
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.contentContainer}
-        keyboardShouldPersistTaps="handled"
-      >
+    <Screen>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {/* Amount Input */}
         <View style={styles.amountContainer}>
           <Text style={styles.currencySymbol}>$</Text>
@@ -253,15 +256,58 @@ export default function NewTransactionScreen() {
           onPress={() => setShowDatePicker(true)}
           icon="calendar"
           style={styles.dateButton}
+          contentStyle={styles.dateButtonContent}
+          labelStyle={styles.dateButtonLabel}
         >
           {format(date, 'MMMM do, yyyy')}
         </Button>
-        {showDatePicker && (
+
+        {Platform.OS === 'ios' && (
+          <Portal>
+            <Modal
+              visible={showDatePicker}
+              onDismiss={() => setShowDatePicker(false)}
+              contentContainerStyle={[
+                styles.modalContainer,
+                { backgroundColor: theme.colors.background }
+              ]}
+              style={styles.datePickerModal}
+            >
+              <Text variant="titleLarge" style={styles.modalTitle}>Select Date</Text>
+              
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  textColor={theme.colors.onBackground}
+                />
+              </View>
+
+              <View style={styles.modalActions}>
+                <Button onPress={() => setShowDatePicker(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  mode="contained" 
+                  onPress={() => setShowDatePicker(false)}
+                >
+                  Confirm
+                </Button>
+              </View>
+            </Modal>
+          </Portal>
+        )}
+
+        {Platform.OS === 'android' && showDatePicker && (
           <DateTimePicker
             value={date}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="default"
             onChange={handleDateChange}
+            maximumDate={new Date()}
           />
         )}
 
@@ -293,9 +339,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  scrollView: {
-    flex: 1,
   },
   contentContainer: {
     padding: 20,
@@ -372,7 +415,50 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dateButton: {
-    marginBottom: 8,
+    marginVertical: 16,
+    borderRadius: 8,
+    borderColor: 'rgba(0, 0, 0, 0.12)',
+  },
+  dateButtonContent: {
+    height: 48,
+  },
+  dateButtonLabel: {
+    fontSize: 16,
+  },
+  datePickerModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalContainer: {
+    margin: 20,
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalTitle: {
+    marginBottom: 20,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  datePickerContainer: {
+    marginBottom: 20,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
   submitButton: {
     marginTop: 4,

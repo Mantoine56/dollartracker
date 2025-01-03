@@ -115,4 +115,46 @@ export function useDailyTransactions(date: Date) {
   });
 }
 
+/**
+ * Enhanced Stats Hooks
+ */
+export function useSpendingByTimeframe(timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['spending', user?.id, timeframe, startDate?.toISOString(), endDate?.toISOString()],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return statsService.getSpendingByTimeframe(user.id, timeframe, startDate, endDate);
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useSpendingByCategory(timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['spending-by-category', user?.id, timeframe, startDate?.toISOString(), endDate?.toISOString()],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return statsService.getSpendingByCategory(user.id, timeframe, startDate, endDate);
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useDailySpendingPatterns() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['spending-patterns', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return statsService.getDailySpendingPatterns(user.id);
+    },
+    enabled: !!user?.id,
+  });
+}
+
 // ... Similar enhancements for other hooks ...
