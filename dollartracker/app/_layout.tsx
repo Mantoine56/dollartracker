@@ -47,6 +47,15 @@ export default function RootLayout() {
                       presentation: 'modal',
                     }}
                   />
+                  <Stack.Screen
+                    name="transaction/new"
+                    options={{
+                      title: 'Add Transaction',
+                      presentation: 'modal',
+                      headerShown: true,
+                      headerBackTitle: 'Back',
+                    }}
+                  />
                 </Stack>
               </PaperProvider>
             </SafeAreaProvider>

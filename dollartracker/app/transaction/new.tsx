@@ -145,20 +145,9 @@ export default function NewTransactionScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header with back button */}
-      <View style={styles.header}>
-        <Link href="../" asChild>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            style={styles.backButton}
-          />
-        </Link>
-      </View>
-
+    <Screen contentStyle={styles.container}>
       <ScrollView 
-        style={styles.content} 
+        style={styles.scrollView} 
         contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
@@ -296,7 +285,7 @@ export default function NewTransactionScreen() {
       >
         {errorMessage || 'Transaction added successfully!'}
       </Snackbar>
-    </View>
+    </Screen>
   );
 }
 
@@ -305,18 +294,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Platform.OS === 'ios' ? 48 : 0, 
-    paddingHorizontal: 8,
-  },
-  backButton: {
-    margin: 0,
-    marginLeft: -4, 
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
   contentContainer: {
