@@ -28,7 +28,39 @@ export const budgetService = {
       return null;
     }
 
-    return data;
+    if (!data) return null;
+
+    // Calculate days in period and elapsed days
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    const currentDate = new Date();
+    const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const elapsedDays = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const remainingDays = Math.max(daysInPeriod - elapsedDays, 1);
+
+    // Get total spent amount in the period
+    const { data: periodTransactions, error: transactionError } = await supabase
+      .from('daily_transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .gte('transaction_time', startDate.toISOString())
+      .lte('transaction_time', currentDate.toISOString());
+
+    if (transactionError) {
+      console.error('Error fetching period transactions:', transactionError);
+      return null;
+    }
+
+    const totalSpent = periodTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+    const remainingBudget = data.spending_budget - totalSpent;
+    
+    // Calculate daily allowance based on remaining budget and days
+    const dailyAllowance = remainingBudget / remainingDays;
+
+    return {
+      ...data,
+      daily_allowance: dailyAllowance
+    };
   },
 
   async createBudget(
@@ -132,7 +164,14 @@ export const transactionService = {
 
     const { data, error } = await supabase
       .from('daily_transactions')
-      .select('*')
+      .select(`
+        *,
+        category:categories (
+          id,
+          name,
+          icon
+        )
+      `)
       .eq('user_id', userId)
       .gte('transaction_time', startOfDay.toISOString())
       .lte('transaction_time', endOfDay.toISOString())

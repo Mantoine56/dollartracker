@@ -74,7 +74,7 @@ export const LoadingOverlay = ({
           <MaterialCommunityIcons
             name="loading"
             size={spinnerSize}
-            color={spinnerColor || theme.colors.primary.main}
+            color={spinnerColor || theme.colors.primary}
           />
         </Animated.View>
         {message && (
@@ -82,7 +82,7 @@ export const LoadingOverlay = ({
             variant="bodyLarge"
             style={[
               styles.message,
-              { color: theme.colors.text.primary },
+              { color: theme.colors.onSurface }
             ]}
           >
             {message}
@@ -98,14 +98,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
+    zIndex: 999,
   },
   content: {
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
   },
   message: {
-    marginTop: 16,
+    marginTop: 10,
     textAlign: 'center',
   },
 });

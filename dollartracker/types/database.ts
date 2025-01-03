@@ -15,10 +15,23 @@ export interface User {
 export interface Budget {
   id: string;
   user_id: string;
-  budget_amount: number;
+  monthly_income: number;
+  fixed_expenses: number;
+  savings_target: number;
+  spending_budget: number;
   budget_period: BudgetPeriod;
   start_date: string;
   end_date: string;
+  created_at: string;
+  updated_at: string;
+  daily_allowance?: number;
+}
+
+export interface Category {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +42,7 @@ export interface DailyTransaction {
   transaction_time: string;
   amount: number;
   category_id: string | null;
+  category?: Category | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -134,6 +148,11 @@ export interface Schema {
         Row: Reward;
         Insert: Omit<Reward, 'id' | 'earned_at'>;
         Update: Partial<Omit<Reward, 'id'>>;
+      };
+      categories: {
+        Row: Category;
+        Insert: Omit<Category, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Category, 'id'>>;
       };
     };
     Views: {

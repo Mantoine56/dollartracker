@@ -96,6 +96,8 @@ export function useAddTransaction() {
     onSuccess: () => {
       // Invalidate and refetch transactions queries
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      // Also invalidate budget query since it affects daily allowance
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, 'current'] });
     },
   });
 }

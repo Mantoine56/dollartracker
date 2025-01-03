@@ -1,8 +1,9 @@
-import { View, StyleSheet, Animated } from 'react-native';
-import { Text, Surface, useTheme, IconButton, Icon, Portal, Modal } from 'react-native-paper';
+import { View, StyleSheet, Animated, Pressable } from 'react-native';
+import { Text, Surface, useTheme, IconButton, Icon, Portal, Modal, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   Screen,
   Container,
@@ -15,69 +16,81 @@ import {
 import { TransactionForm } from '../../components/transactions/TransactionForm';
 import { FAB } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-type Transaction = {
-  id: string;
-  amount: number;
-  category: string;
-  timestamp: Date;
-  notes?: string;
-};
+import { useCurrentBudget, useDailyTransactions } from '../../lib/enhanced-hooks';
+import { DailyTransaction } from '../../types/database';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [isLoading] = useState(false);
-  const [selectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [progressAnimation] = useState(new Animated.Value(0));
   const [showTransactionForm, setShowTransactionForm] = useState(false);
 
-  const dailyAllowance = 50.00;
-  const spent = 70.99;
+  // Fetch real data
+  const { data: budget, isLoading: budgetLoading } = useCurrentBudget();
+  const { data: transactions, isLoading: transactionsLoading } = useDailyTransactions(selectedDate);
+
+  console.log('Budget data:', JSON.stringify(budget, null, 2));
+  console.log('Transactions data:', JSON.stringify(transactions, null, 2));
+
+  const isLoading = budgetLoading || transactionsLoading;
+
+  // Date picker handlers
+  const onDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const showPreviousDay = () => {
+    const prevDate = new Date(selectedDate);
+    prevDate.setDate(prevDate.getDate() - 1);
+    setSelectedDate(prevDate);
+  };
+
+  const showNextDay = () => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const now = new Date();
+    if (nextDate <= now) {
+      setSelectedDate(nextDate);
+    }
+  };
+
+  // Calculate daily allowance and spent amount
+  const dailyAllowance = budget?.daily_allowance ?? 0;
+  const spent = transactions?.reduce((total, t) => total + t.amount, 0) ?? 0;
   const remaining = dailyAllowance - spent;
   const allowanceStatus = remaining >= 0 ? 'success' : 'error';
-  const spentPercentage = Math.min(spent / dailyAllowance, 1);
+  const spentPercentage = dailyAllowance > 0 ? Math.min(spent / dailyAllowance, 1) : 0;
 
   useEffect(() => {
-    Animated.timing(progressAnimation, {
-      toValue: spentPercentage,
-      duration: 1000,
-      useNativeDriver: false,
-    }).start();
-  }, [spentPercentage]);
-
-  const transactions = [
-    {
-      id: '1',
-      amount: 25.99,
-      category: 'food',
-      timestamp: new Date(),
-      notes: 'Lunch'
-    },
-    {
-      id: '2',
-      amount: 45.00,
-      category: 'transport',
-      timestamp: new Date(),
+    if (!isLoading && dailyAllowance > 0) {
+      Animated.timing(progressAnimation, {
+        toValue: spentPercentage,
+        duration: 1000,
+        useNativeDriver: false,
+      }).start();
     }
-  ];
+  }, [spentPercentage, isLoading, dailyAllowance]);
 
-  function getCategoryIcon(category: string) {
-    switch (category) {
-      case 'food':
-        return 'food';
-      case 'transport':
-        return 'car';
-      default:
-        return 'cash';
+  function getCategoryIcon(transaction: any) {
+    console.log('Getting icon for transaction:', transaction);
+    if (!transaction.category?.icon) {
+      console.log('No category icon found, using default');
+      return 'cash';
     }
+    console.log('Using category icon:', transaction.category.icon);
+    return transaction.category.icon;
   }
 
   const getStatusColors = () => {
     return allowanceStatus === 'success' 
-      ? ['#4CAF50', '#45A049']  // Green gradient
-      : ['#FF5252', '#FF1744']; // Red gradient
+      ? [theme.colors.primaryContainer, theme.colors.primary]  // Green gradient
+      : [theme.colors.errorContainer, theme.colors.error]; // Red gradient
   };
 
   const rotateProgress = progressAnimation.interpolate({
@@ -94,42 +107,74 @@ export default function HomeScreen() {
           <View style={styles.circleContainer}>
             <View style={styles.circle}>
               <View style={styles.innerCircle}>
-                <Text variant="displayLarge" style={[styles.allowanceAmount, { fontSize: 36, fontWeight: 'bold' }]}>
-                  ${dailyAllowance.toFixed(2)}
-                </Text>
-                <Text variant="bodyMedium" style={[
-                  styles.remainingAmount,
-                  { color: theme.colors[allowanceStatus === 'success' ? 'success' : 'error'].main }
-                ]}>
-                  Remaining: ${remaining.toFixed(2)}
-                </Text>
+                {isLoading ? (
+                  <LoadingOverlay visible={true} message="Loading..." />
+                ) : (
+                  <>
+                    <Text variant="displayLarge" style={[styles.allowanceAmount, { fontSize: 36, fontWeight: 'bold' }]}>
+                      ${dailyAllowance.toFixed(2)}
+                    </Text>
+                    <Text variant="bodyMedium" style={[
+                      styles.remainingAmount,
+                      { color: allowanceStatus === 'success' ? theme.colors.primary : theme.colors.error }
+                    ]}>
+                      Remaining: ${remaining.toFixed(2)}
+                    </Text>
+                  </>
+                )}
               </View>
-              <Animated.View
-                style={[
-                  styles.progressRing,
-                  {
-                    transform: [{ rotate: rotateProgress }],
-                    borderColor: getStatusColors()[0],
-                  }
-                ]}
-              />
+              {!isLoading && (
+                <Animated.View
+                  style={[
+                    styles.progressRing,
+                    {
+                      transform: [{ rotate: rotateProgress }],
+                      borderColor: getStatusColors()[0],
+                    }
+                  ]}
+                />
+              )}
             </View>
           </View>
 
-          <Surface style={styles.dateContainer} elevation={1}>
-            <Icon 
-              source="calendar" 
-              size={20} 
-              color={theme.colors.primary.main}
+          <View style={styles.datePickerContainer}>
+            <IconButton
+              icon="chevron-left"
+              onPress={showPreviousDay}
+              mode="contained"
+              containerColor={theme.colors.primaryContainer}
             />
-            <Text style={styles.dateText}>
-              {selectedDate.toLocaleDateString('en-US', { 
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </Text>
-          </Surface>
+            <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+              <Surface style={styles.dateSurface} elevation={1}>
+                <Icon source="calendar" size={20} />
+                <Text variant="bodyLarge" style={styles.dateText}>
+                  {selectedDate.toLocaleDateString('en-US', { 
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </Text>
+              </Surface>
+            </Pressable>
+            <IconButton
+              icon="chevron-right"
+              onPress={showNextDay}
+              mode="contained"
+              containerColor={theme.colors.primaryContainer}
+              disabled={new Date(selectedDate).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)}
+            />
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+
         </View>
 
         <View style={styles.transactionsSection}>
@@ -138,20 +183,20 @@ export default function HomeScreen() {
           </Text>
 
           <ScrollView style={styles.transactionsList}>
-            {transactions.length === 0 ? (
+            {!transactions || transactions.length === 0 ? (
               <EmptyState
                 title="No Transactions Yet"
                 description="Start tracking your expenses by adding your first transaction"
                 icon="wallet-outline"
                 action={{
                   label: "Add Transaction",
-                  onPress: () => router.push('/add-transaction'),
+                  onPress: () => router.push('/transaction/new'),
                 }}
               />
             ) : (
-              transactions.map((transaction, index) => (
+              transactions.map((transaction) => (
                 <Surface 
-                  key={index} 
+                  key={transaction.id} 
                   style={styles.transactionItem}
                   elevation={2}
                 >
@@ -161,15 +206,14 @@ export default function HomeScreen() {
                       style={styles.iconContainer}
                     >
                       <Icon 
-                        source={getCategoryIcon(transaction.category)}
+                        source={getCategoryIcon(transaction)}
                         size={24} 
-                        color={theme.colors.primary.main}
+                        color={theme.colors.primary}
                       />
                     </LinearGradient>
                     <View style={styles.transactionDetails}>
                       <Text style={styles.transactionCategory}>
-                        {transaction.category.charAt(0).toUpperCase() + 
-                         transaction.category.slice(1)}
+                        {transaction.category?.name || 'Uncategorized'}
                       </Text>
                       {transaction.notes && (
                         <Text style={styles.transactionNotes}>
@@ -256,24 +300,27 @@ const styles = StyleSheet.create({
   remainingAmount: {
     fontSize: 16,
   },
-  dateContainer: {
+  datePickerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 8,
+  },
+  dateButton: {
+    flex: 1,
+    maxWidth: 200,
+  },
+  dateSurface: {
+    padding: 8,
     borderRadius: 8,
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   dateText: {
-    marginLeft: 8,
-    color: '#000000',
+    textAlign: 'center',
   },
   transactionsSection: {
     flex: 1,
