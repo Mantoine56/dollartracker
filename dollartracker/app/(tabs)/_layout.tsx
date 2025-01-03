@@ -43,7 +43,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="stats"
+        name="Stats"
         options={{
           title: 'Stats',
           tabBarLabel: 'Stats',

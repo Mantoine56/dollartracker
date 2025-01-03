@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, View, ScrollView, Dimensions, ActivityIndicator, Clipboard, Platform } from 'react-native';
 import { Text, useTheme, SegmentedButtons, Surface, IconButton, Snackbar, Portal, Modal, Button } from 'react-native-paper';
-import { BarChart, LineChart, PieChart } from 'react-native-gifted-charts';
+import { LineChart } from 'react-native-chart-kit';
 import { Screen } from '../../components/layout';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSpendingByTimeframe, useSpendingByCategory, useDailySpendingPatterns } from '../../lib/enhanced-hooks';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 type TimeFrame = 'week' | 'month' | 'custom';
@@ -84,39 +84,89 @@ export default function StatsScreen() {
   );
   const { data: categoryData, isLoading: isCategoryLoading } = useSpendingByCategory(
     timeframe,
-    getDateRange.start,
-    getDateRange.end
+    timeframe === 'custom' ? customStartDate : undefined,
+    timeframe === 'custom' ? customEndDate : undefined
   );
   const { data: patternsData, isLoading: isPatternsLoading } = useDailySpendingPatterns();
 
   // Process spending data for charts
-  const barData = useMemo(() => {
-    if (!spendingData) return [];
+  const processTransactionsForChart = (transactions: any[], timeframe: TimeFrame) => {
+    if (!transactions) return { labels: [], datasets: [{ data: [] }] };
 
-    const groupedByDay = spendingData.reduce((acc: any, transaction: any) => {
-      const date = format(new Date(transaction.transaction_time), 'EEE');
-      if (!acc[date]) {
-        acc[date] = 0;
-      }
-      acc[date] += transaction.amount;
+    let startDate: Date;
+    let endDate: Date;
+    let dateFormat: string;
+
+    if (timeframe === 'week') {
+      startDate = startOfWeek(new Date());
+      endDate = endOfWeek(new Date());
+      dateFormat = 'EEE';
+    } else if (timeframe === 'month') {
+      startDate = startOfMonth(new Date());
+      endDate = endOfMonth(new Date());
+      dateFormat = 'MMM d';
+    } else {
+      startDate = customStartDate;
+      endDate = customEndDate;
+      dateFormat = 'MMM d';
+    }
+
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    
+    // Initialize spending for all days
+    const dailySpending = days.reduce((acc, day) => {
+      acc[format(day, 'yyyy-MM-dd')] = 0;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
-    return Object.entries(groupedByDay).map(([label, value]) => ({
-      value,
-      label,
-      frontColor: theme.colors.primary,
-    }));
-  }, [spendingData]);
+    // Sum transactions for each day
+    transactions.forEach((transaction: any) => {
+      const date = format(parseISO(transaction.transaction_time), 'yyyy-MM-dd');
+      if (dailySpending.hasOwnProperty(date)) {
+        dailySpending[date] += transaction.amount;
+      }
+    });
 
-  // Process category data for pie chart
-  const pieData = useMemo(() => {
+    // Convert to chart data format
+    let labels: string[];
+    if (timeframe === 'month') {
+      // For monthly view, only show every 5th day and month start/end
+      labels = days.map((day, index) => {
+        const dayOfMonth = parseInt(format(day, 'd'));
+        if (dayOfMonth === 1 || dayOfMonth % 5 === 0 || index === days.length - 1) {
+          return format(day, 'd');
+        }
+        return '';
+      });
+    } else {
+      labels = days.map(day => format(day, dateFormat));
+    }
+    
+    const data = days.map(day => dailySpending[format(day, 'yyyy-MM-dd')]);
+
+    return {
+      labels,
+      datasets: [{ data }],
+    };
+  };
+
+  const chartData = useMemo(() => processTransactionsForChart(spendingData, timeframe), [spendingData, timeframe]);
+
+  // Process category data
+  const categorySpending = useMemo(() => {
     if (!categoryData) return [];
 
-    return categoryData.map((category: any) => ({
-      value: category.total_amount,
-      text: category.category_name,
-      color: category.color || theme.colors.primary,
+    // Sort categories by amount in descending order
+    const sortedCategories = [...categoryData].sort((a, b) => b.total_amount - a.total_amount);
+    
+    // Get the highest spending amount for relative scaling
+    const maxAmount = sortedCategories[0]?.total_amount || 0;
+    
+    return sortedCategories.map(category => ({
+      name: category.category_name,
+      amount: category.total_amount,
+      // Calculate relative width (leave some space for the amount text)
+      relativeWidth: maxAmount > 0 ? (category.total_amount / maxAmount) * 65 : 0 // 65% of available width
     }));
   }, [categoryData]);
 
@@ -192,35 +242,91 @@ export default function StatsScreen() {
           <ActivityIndicator style={styles.loading} />
         ) : (
           <>
-            <Surface style={styles.chartCard} elevation={1}>
+            <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <Text variant="titleMedium" style={styles.chartTitle}>Spending Over Time</Text>
-              <BarChart
-                data={barData}
-                barWidth={30}
-                spacing={20}
-                roundedTop
-                hideRules
-                xAxisThickness={1}
-                yAxisThickness={1}
-                yAxisTextStyle={{ color: theme.colors.onSurface }}
-                xAxisLabelTextStyle={{ color: theme.colors.onSurface }}
-                noOfSections={4}
-              />
+              <View style={styles.chartWrapper}>
+                <View style={styles.chartContainer}>
+                  <LineChart
+                    data={chartData}
+                    width={Dimensions.get('window').width - 64}
+                    height={200}
+                    chartConfig={{
+                      backgroundColor: theme.colors.surface,
+                      backgroundGradientFrom: theme.colors.surface,
+                      backgroundGradientTo: theme.colors.surface,
+                      decimalPlaces: 0,
+                      color: (opacity = 1) => theme.colors.primary,
+                      labelColor: (opacity = 1) => theme.colors.onSurface,
+                      style: {
+                        borderRadius: 8,
+                      },
+                      propsForDots: {
+                        r: '6',
+                        strokeWidth: '2',
+                        stroke: theme.colors.primary
+                      },
+                      propsForLabels: {
+                        fontSize: timeframe === 'month' ? 10 : 12,
+                        rotation: timeframe === 'month' ? 45 : 0,
+                      },
+                      propsForBackgroundLines: {
+                        strokeDasharray: [], // Solid lines
+                        stroke: theme.colors.outlineVariant,
+                        strokeWidth: 1,
+                      },
+                    }}
+                    bezier
+                    style={{
+                      borderRadius: 8,
+                      backgroundColor: theme.colors.surface,
+                    }}
+                    withVerticalLabels
+                    withHorizontalLabels
+                    withDots
+                    withInnerLines
+                    withOuterLines
+                    yAxisLabel="$"
+                    yAxisInterval={timeframe === 'month' ? 2 : 1}
+                    formatYLabel={(value) => value.toString()}
+                    getDotColor={(dataPoint, index) => theme.colors.primary}
+                  />
+                </View>
+              </View>
             </Surface>
 
-            <Surface style={styles.chartCard} elevation={1}>
+            <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <Text variant="titleMedium" style={styles.chartTitle}>Spending by Category</Text>
-              <PieChart
-                data={pieData}
-                donut
-                showText
-                textColor={theme.colors.onSurface}
-                radius={120}
-                innerRadius={80}
-              />
+              <View style={styles.categoryList}>
+                {categorySpending.map((category, index) => (
+                  <View key={index} style={styles.categoryItem}>
+                    <View style={styles.categoryNameContainer}>
+                      <Text variant="bodyMedium" numberOfLines={1} style={styles.categoryName}>
+                        {category.name.length > 8 ? category.name.slice(0, 8) + '...' : category.name}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.categoryBarContainer,
+                      { backgroundColor: theme.colors.surfaceVariant }
+                    ]}>
+                      <View 
+                        style={[
+                          styles.categoryBar,
+                          { 
+                            width: `${category.relativeWidth}%`,
+                            backgroundColor: theme.colors.primary,
+                          }
+                        ]} 
+                      />
+                    </View>
+                    <Text variant="bodyMedium" style={styles.categoryAmount}>
+                      ${category.amount.toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </Surface>
 
-            <Surface style={styles.chartCard} elevation={1}>
+            <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <Text variant="titleMedium" style={styles.chartTitle}>Daily Spending Patterns</Text>
               <View style={styles.patternsContainer}>
                 {spendingPatterns.map((pattern, index) => (
@@ -245,15 +351,25 @@ export default function StatsScreen() {
         <Modal
           visible={showCustomDateModal}
           onDismiss={() => setShowCustomDateModal(false)}
-          contentContainerStyle={[
-            styles.modalContainer,
-            { backgroundColor: theme.colors.background }
-          ]}
+          contentContainerStyle={{
+            margin: 20,
+            borderRadius: 12,
+            padding: 20,
+            elevation: 5,
+            shadowColor: '#000',
+            shadowOffset: {
+              width: 0,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            backgroundColor: theme.colors.background,
+          }}
         >
-          <Text variant="titleLarge" style={styles.modalTitle}>Select Date Range</Text>
+          <Text variant="titleLarge" style={{ marginBottom: 20, textAlign: 'center', fontWeight: '600' }}>Select Date Range</Text>
           
-          <View style={styles.datePickerContainer}>
-            <View style={styles.datePickerRow}>
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text variant="bodyMedium">Start Date:</Text>
               <Button
                 mode="contained-tonal"
@@ -266,7 +382,7 @@ export default function StatsScreen() {
               </Button>
             </View>
 
-            <View style={styles.datePickerRow}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text variant="bodyMedium">End Date:</Text>
               <Button
                 mode="contained-tonal"
@@ -280,7 +396,7 @@ export default function StatsScreen() {
             </View>
 
             {Platform.OS === 'ios' && datePickerVisible && (
-              <View style={styles.iosDatePickerContainer}>
+              <View style={{ marginTop: 10, marginBottom: 10, borderRadius: 8, overflow: 'hidden' }}>
                 <DateTimePicker
                   value={currentDateSelection === 'start' ? customStartDate : customEndDate}
                   mode="date"
@@ -293,7 +409,7 @@ export default function StatsScreen() {
             )}
           </View>
 
-          <View style={styles.modalActions}>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
             <Button 
               onPress={() => {
                 setShowCustomDateModal(false);
@@ -343,18 +459,17 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
   },
+  segmentedButtons: {
+    marginBottom: 16,
+  },
   titleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   title: {
-    fontWeight: 'bold',
-  },
-  segmentedButtons: {
-    marginBottom: 16,
+    flex: 1,
   },
   chartCard: {
     padding: 16,
@@ -363,77 +478,62 @@ const styles = StyleSheet.create({
   },
   chartTitle: {
     marginBottom: 16,
-    fontWeight: '600',
   },
-  loading: {
-    marginTop: 32,
+  chartWrapper: {
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  patternsContainer: {
-    marginTop: 16,
+  chartContainer: {
+    marginHorizontal: -8,
   },
-  patternRow: {
+  categoryList: {
+    marginTop: 8,
+    width: '100%',
+  },
+  categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    width: '100%',
   },
-  patternLabel: {
-    width: 100,
+  categoryNameContainer: {
+    width: 80,
+    paddingRight: 8,
   },
-  patternBar: {
-    height: 20,
+  categoryName: {
+    flexShrink: 1,
+  },
+  categoryBarContainer: {
+    flex: 1,
+    height: 8,
     borderRadius: 4,
-    marginHorizontal: 8,
+    marginHorizontal: 12,
+    overflow: 'hidden',
   },
-  patternValue: {
-    minWidth: 60,
+  categoryBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  categoryAmount: {
+    width: 80,
     textAlign: 'right',
-  },
-  exportButton: {
-    marginLeft: 8,
   },
   dateRangeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   dateRangeText: {
-    marginRight: 8,
+    flex: 1,
   },
-  modalContainer: {
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+  loading: {
+    marginTop: 32,
   },
-  modalTitle: {
-    marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: '600',
+  exportButton: {
+    marginLeft: 8,
   },
-  datePickerContainer: {
-    marginBottom: 20,
-  },
-  datePickerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iosDatePickerContainer: {
-    marginTop: 10,
-    marginBottom: 10,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  modalActions: {
+  customDateContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
