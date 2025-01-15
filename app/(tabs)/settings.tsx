@@ -199,6 +199,26 @@ export default function SettingsScreen() {
         )}
 
         <List.Section>
+          <List.Subheader>Legal</List.Subheader>
+          <List.Item
+            title="Privacy Policy"
+            description="Read our privacy policy"
+            left={props => <List.Icon {...props} icon="shield-account" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push('/modals/privacy')}
+          />
+          <List.Item
+            title="Terms of Service"
+            description="View terms of service"
+            left={props => <List.Icon {...props} icon="file-document" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push('/modals/terms')}
+          />
+        </List.Section>
+
+        <Divider />
+
+        <List.Section>
           <List.Subheader>Data Management</List.Subheader>
           <List.Item
             title="Export Data"
@@ -209,21 +229,6 @@ export default function SettingsScreen() {
             disabled={settings.isSaving}
           />
           <Divider />
-          <List.Item
-            title="Privacy Policy"
-            description="Read our privacy policy"
-            left={props => <List.Icon {...props} icon="shield-account" />}
-            onPress={() => router.push('/modals/privacy')}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-          />
-          <Divider />
-          <List.Item
-            title="Terms of Service"
-            description="View terms of service"
-            left={props => <List.Icon {...props} icon="file-document" />}
-            onPress={() => router.push('/modals/terms')}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-          />
         </List.Section>
 
         <View style={styles.dangerZone}>
