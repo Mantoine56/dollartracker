@@ -12,6 +12,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect } from 'react';
 import { UserProvider } from '../context/user';
 import { SettingsProvider, useSettings } from '../context/settings';
+import { SupabaseProvider } from '../context/supabase'; // Added import statement
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -87,19 +88,21 @@ function NavigationContent() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <UserProvider>
-              <SettingsProvider>
-                <ThemedApp>
-                  <NavigationContent />
-                </ThemedApp>
-              </SettingsProvider>
-            </UserProvider>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <SupabaseProvider>
+            <AuthProvider>
+              <UserProvider>
+                <SettingsProvider>
+                  <ThemedApp>
+                    <NavigationContent />
+                  </ThemedApp>
+                </SettingsProvider>
+              </UserProvider>
+            </AuthProvider>
+          </SupabaseProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

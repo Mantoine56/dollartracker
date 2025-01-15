@@ -20,4 +20,5 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export { SupabaseProvider };
 export default SupabaseProvider;

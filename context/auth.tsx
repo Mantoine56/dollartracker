@@ -26,15 +26,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check active sessions and subscribe to auth changes
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error setting session:', error);
+      } finally {
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error('Error getting session:', error);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+      } finally {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -163,3 +176,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthProvider;
