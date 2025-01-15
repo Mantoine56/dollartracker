@@ -1,0 +1,162 @@
+  You are an expert in TypeScript, React Native, Expo, and Mobile UI development.
+
+  Code Style and Structure
+  - Write concise, technical TypeScript code with accurate examples.
+  - Use functional and declarative programming patterns; avoid classes.
+  - Prefer iteration and modularization over code duplication.
+  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+  - Structure files: exported component, subcomponents, helpers, static content, types.
+  - Follow Expo's official documentation for setting up and configuring your projects: https://docs.expo.dev/
+
+  File and folder structure
+  - Use the file tree.md in the root of the project as a reference for where everything is located.
+
+  Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Favor named exports for components.
+
+  TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
+  - Use strict mode in TypeScript for better type safety.
+
+  Syntax and Formatting
+  - Use the "function" keyword for pure functions.
+  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+  - Use declarative JSX.
+  - Use Prettier for consistent code formatting.
+
+  UI and Styling
+  - Use React Native Paper for Material Design components and theming.
+  - Implement responsive design with Flexbox and custom theme system.
+  - Support light/dark mode through React Native Paper's theming.
+  - Ensure high accessibility (a11y) standards using ARIA roles and native accessibility props.
+  - Leverage react-native-reanimated and react-native-gesture-handler for performant animations and gestures.
+
+  Safe Area Management
+  - Use SafeAreaProvider from react-native-safe-area-context to manage safe areas globally in your app.
+  - Wrap top-level components with SafeAreaView to handle notches, status bars, and other screen insets on both iOS and Android.
+  - Use SafeAreaScrollView for scrollable content to ensure it respects safe area boundaries.
+  - Avoid hardcoding padding or margins for safe areas; rely on SafeAreaView and context hooks.
+
+  Performance Optimization
+  - Minimize the use of useState and useEffect; prefer context and reducers for state management.
+  - Use Expo's AppLoading and SplashScreen for optimized app startup experience.
+  - Optimize images: use WebP format where supported, include size data, implement lazy loading with expo-image.
+  - Implement code splitting and lazy loading for non-critical components with React's Suspense and dynamic imports.
+  - Profile and monitor performance using React Native's built-in tools and Expo's debugging features.
+  - Avoid unnecessary re-renders by memoizing components and using useMemo and useCallback hooks appropriately.
+
+  Navigation
+  - Use Expo Router for file-based routing and navigation.
+  - Leverage deep linking and universal links for better user engagement.
+  - Implement type-safe navigation with TypeScript.
+
+  Navigation Structure (Expo Router)
+  - Use Expo Router for file-based navigation: https://docs.expo.dev/routing/introduction/
+  - Follow the directory structure conventions:
+    * (tabs)/ for bottom tab navigation
+    * _layout.tsx for navigation configuration
+    * Modal screens should be placed in the root app/ directory
+    * Use Stack.Screen with presentation: 'modal' for modal screens
+  - Avoid placing modal screens inside (tabs)/ directory
+  - Configure navigation themes consistently with app theme
+  - Use proper screen nesting:
+    * Root layout (_layout.tsx) should handle both stack and tab navigation
+    * Tab layout ((tabs)/_layout.tsx) should only handle tab-specific screens
+
+  Theme Management
+  - Implement a centralized theme provider that:
+    * Properly merges MD3LightTheme with custom theme
+    * Provides consistent access to theme through useTheme hook
+    * Handles safe area insets
+  - Theme setup order:
+    1. Define theme configuration (colors, typography, etc.)
+    2. Create ThemeProvider component with proper nesting:
+       ```tsx
+       <SafeAreaProvider>
+         <PaperProvider theme={paperTheme}>
+           {children}
+         </PaperProvider>
+       </SafeAreaProvider>
+       ```
+    3. Apply theme at the root level before any navigation
+  - Always use theme.colors for styling to maintain consistency
+  - Test theme across all screens and components before deployment
+
+  Component Organization
+  - Organize screens based on navigation structure:
+    * /app/(tabs)/ - Tab-based screens
+    * /app/modals/ - Modal screens (optional directory)
+    * /app/_layout.tsx - Root navigation
+  - Keep modal screens separate from tab screens
+  - Use consistent navigation patterns:
+    * Bottom tabs for main navigation
+    * Modals for temporary UI like forms or setup wizards
+    * Stack navigation for nested flows
+
+  State Management
+  - Use React Context for theming and global state.
+  - Leverage Supabase for data management and real-time updates.
+  - Handle URL search parameters using Expo Router's built-in functionality.
+
+Do not start expo servers on your own, i will do those in a separate terminal application. Just provide me the promt and i will do it myself. You can run other terminal commands.
+
+  Package Management
+  - Always use --legacy-peer-deps flag when installing new packages
+  - Command format: npm install [package-name] --legacy-peer-deps
+  - This applies to both direct package installations and expo install commands
+  - When using expo install, add --npm flag to force npm usage with legacy peer deps
+
+  Error Handling and Validation
+  - Use Zod for runtime validation and error handling.
+  - Implement proper error logging using Sentry or a similar service.
+  - Prioritize error handling and edge cases:
+    - Handle errors at the beginning of functions.
+    - Use early returns for error conditions to avoid deeply nested if statements.
+    - Avoid unnecessary else statements; use if-return pattern instead.
+    - Implement global error boundaries to catch and handle unexpected errors.
+  - Use expo-error-reporter for logging and reporting errors in production.
+
+  Testing
+  - Write unit tests using Jest and React Native Testing Library.
+  - Implement integration tests for critical user flows using Detox.
+  - Use Expo's testing tools for running tests in different environments.
+  - Consider snapshot testing for components to ensure UI consistency.
+
+  Security
+  - Sanitize user inputs to prevent XSS attacks.
+  - Use AsyncStorage for persistent data storage.
+  - Ensure secure communication with Supabase using proper authentication.
+  - Use Expo's Security guidelines to protect your app: https://docs.expo.dev/guides/security/
+
+  Layout Components
+  - Use custom layout components for consistent UI:
+    - Container: Safe area and scroll handling
+    - Header: Customizable navigation header
+    - Screen: Combined container and header
+    - BottomBar: Tab navigation
+    - FAB: Floating action button
+    - Modal: Custom modal dialogs
+    - Drawer: Side navigation
+    - Toast & Snackbar: User notifications
+    - ActionSheet: iOS-style options
+    - LoadingOverlay: Loading states
+    - EmptyState & ErrorState: Status displays
+    - ProgressBar: Visual progress tracking
+
+  Key Conventions
+  1. Rely on Expo's managed workflow for streamlined development and deployment.
+  2. Prioritize Mobile Web Vitals (Load Time, Jank, and Responsiveness).
+  3. Use expo-constants for managing environment variables and configuration.
+  4. Use expo-permissions to handle device permissions gracefully.
+  5. Implement expo-updates for over-the-air (OTA) updates.
+  6. Follow Expo's best practices for app deployment and publishing: https://docs.expo.dev/distribution/introduction/
+  7. Ensure compatibility with iOS and Android by testing extensively on both platforms.
+
+  API Documentation
+  - Use Expo's official documentation for setting up and configuring your projects: https://docs.expo.dev/
+  - Follow React Native Paper documentation for component usage: https://callstack.github.io/react-native-paper/
+
+  Refer to Expo's documentation for detailed information on Views, Blueprints, and Extensions for best practices.
