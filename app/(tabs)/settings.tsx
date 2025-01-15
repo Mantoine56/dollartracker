@@ -87,6 +87,29 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleResetPassword = async () => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user?.email as string, {
+        redirectTo: 'dollartracker://reset-password',
+      });
+
+      if (error) throw error;
+
+      Alert.alert(
+        'Password Reset Email Sent',
+        'Check your email and open the reset link on this device to reset your password in the app.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error sending reset password email:', error);
+      Alert.alert(
+        'Error',
+        'Failed to send password reset email. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView 
@@ -175,29 +198,6 @@ export default function SettingsScreen() {
 
         <Divider />
 
-        {isBiometricAvailable && (
-          <>
-            <List.Section>
-              <List.Subheader>Security</List.Subheader>
-              <List.Item
-                title="Biometric Authentication"
-                description="Use Face ID or Touch ID to secure your app"
-                left={props => <List.Icon {...props} icon="fingerprint" />}
-                right={() => (
-                  <Switch
-                    value={false}
-                    onValueChange={() => {
-                      // TODO: Implement biometric auth
-                    }}
-                    disabled={true}
-                  />
-                )}
-              />
-            </List.Section>
-            <Divider />
-          </>
-        )}
-
         <List.Section>
           <List.Subheader>Legal</List.Subheader>
           <List.Item
@@ -256,7 +256,12 @@ export default function SettingsScreen() {
                 );
               }}
             />
-            <Divider />
+            <List.Item
+              title="Reset Password"
+              description="Send password reset instructions to your email"
+              left={props => <List.Icon {...props} icon="key" color={theme.colors.error} />}
+              onPress={handleResetPassword}
+            />
             <List.Item
               title="Delete Account"
               description="Permanently delete your account and all data"
