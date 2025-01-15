@@ -13,18 +13,46 @@
 |   |   |-- index.tsx                 # Main dashboard/home screen
 |   |   |-- settings.tsx              # Application settings screen
 |   |   `-- stats.tsx                 # Financial statistics and analytics
+|   |-- auth/                         # Additional auth screens
+|   |   |-- _layout.tsx               # Auth navigation layout
+|   |   |-- forgot-password.tsx       # Password recovery screen
+|   |   |-- sign-in.tsx              # Sign in screen
+|   |   `-- sign-up.tsx              # Sign up screen
+|   |-- context/                      # App-level context providers
+|   |   |-- settings-context.tsx      # Settings management context
+|   |   |-- supabase-context.tsx      # Supabase client context
+|   |   `-- user-context.tsx          # User state management context
 |   |-- examples/                     # Example components and screens
 |   |   `-- empty-states.tsx          # Empty state examples
 |   |-- modals/                       # Modal screens and overlays
 |   |   |-- budget-wizard/            # Budget setup wizard
 |   |   |   |-- components/           # Wizard-specific UI components
-|   |   |   |-- context/              # Wizard state management
+|   |   |   |   |-- budget-review.tsx # Budget review step
+|   |   |   |   |-- income-setup.tsx  # Income setup step
+|   |   |   |   `-- spending-setup.tsx # Spending setup step
+|   |   |   |-- context/             # Wizard state management
+|   |   |   |   `-- budget-context.tsx # Budget wizard context
 |   |   |   `-- index.tsx             # Main wizard screen
-|   |   `-- _layout.tsx               # Modal navigation layout
+|   |   |-- _layout.tsx               # Modal navigation layout
+|   |   |-- export.tsx                # Export data modal
+|   |   |-- privacy.tsx               # Privacy policy modal
+|   |   `-- terms.tsx                 # Terms of service modal
 |   |-- transaction/                  # Transaction management screens
+|   |   |-- _layout.tsx               # Transaction navigation layout
 |   |   `-- new.tsx                   # New transaction creation screen
-|   `-- _layout.tsx                   # Root navigation layout
+|   |-- +html.tsx                     # HTML document configuration
+|   |-- +not-found.tsx               # 404 error page
+|   |-- _layout.tsx                   # Root navigation layout
+|   |-- modal.tsx                     # Modal screen wrapper
+|   `-- reset-password.tsx            # Password reset screen
 |-- assets/                           # Static assets directory
+|   |-- fonts/                        # Custom fonts
+|   |   `-- SpaceMono-Regular.ttf     # Space Mono font
+|   |-- images/                       # App images
+|   |   |-- adaptive-icon.png         # Adaptive app icon
+|   |   |-- favicon.png               # Web favicon
+|   |   |-- icon.png                  # App icon
+|   |   `-- splash-icon.png           # Splash screen icon
 |   |-- error.png                     # Error state illustration
 |   |-- file.png                      # File icon
 |   |-- forward.png                   # Forward navigation icon
@@ -32,12 +60,16 @@
 |   |-- logotype.png                  # App logotype
 |   |-- pkg.png                       # Package icon
 |   |-- sitemap.png                   # Sitemap illustration
-|   |-- splash.png                    # App splash screen
+|   |-- splash.png                    # Splash screen
 |   `-- unmatched.png                 # Unmatched state illustration
 |-- components/                       # Reusable UI components
 |   |-- budget/                       # Budget-related components
+|   |   |-- BudgetCircle.tsx          # Budget progress circle
 |   |   `-- BudgetDashboard.tsx       # Main budget overview component
+|   |-- calendar/                     # Calendar components
+|   |   `-- TransactionCalendar.tsx   # Transaction calendar view
 |   |-- feedback/                     # User feedback components
+|   |   |-- ErrorState.tsx            # Error state component with error handling
 |   |   `-- EmptyState.tsx            # Empty state display component
 |   |-- layout/                       # Core layout components
 |   |   |-- ActionSheet.tsx           # Bottom action sheet
@@ -45,166 +77,63 @@
 |   |   |-- Container.tsx            # Layout wrapper
 |   |   |-- Drawer.tsx               # Side navigation drawer
 |   |   |-- EmptyState.tsx           # Empty state handler
-|   |   |-- ErrorState.tsx           # Error display
 |   |   |-- FAB.tsx                  # Floating action button
 |   |   |-- Header.tsx               # App header
 |   |   |-- LoadingOverlay.tsx       # Loading indicator
 |   |   |-- Modal.tsx                # Modal dialog
 |   |   |-- ProgressBar.tsx          # Progress indicator
-|   |   |-- Screen.tsx               # Screen container
 |   |   |-- Snackbar.tsx             # Notification snackbar
 |   |   |-- Toast.tsx                # Toast messages
 |   |   `-- index.ts                 # Layout components exports
 |   |-- transactions/                # Transaction-related components
 |   |   |-- AddTransactionButton.tsx  # Transaction creation button
 |   |   `-- TransactionForm.tsx       # Transaction input form
-|   `-- ui/                          # Common UI elements
-|       |-- utils/                    # UI utilities
-|       |   `-- animations.ts         # Animation utilities
-|       |-- AchievementCard.tsx       # Achievement display component
-|       |-- AchievementUnlock.tsx     # Achievement unlock modal
-|       |-- AchievementProgress.tsx   # Achievement progress display
-|       |-- Badge.tsx                 # Badge component
-|       |-- BudgetInput.tsx           # Budget input component
-|       |-- Button.tsx                # Button component
-|       |-- Card.tsx                  # Card container component
-|       |-- CategoryPicker.tsx        # Category selection component
-|       |-- CircularProgress.tsx      # Progress indicator component
-|       |-- ConfettiExplosion.tsx     # Celebration animation
-|       |-- DatePicker.tsx            # Date selection component
-|       |-- Input.tsx                 # Text input component
-|       |-- ProgressRing.tsx          # Circular progress indicator
-|       |-- RecurringTransactionInput.tsx  # Recurring transaction form
-|       |-- RewardBadge.tsx           # Achievement badge component
-|       |-- Screen.tsx                # Screen component
-|       |-- SegmentedControl.tsx      # Segmented control component
-|       |-- StatCard.tsx              # Statistics card component
-|       |-- TransactionCard.tsx       # Transaction display component
-|       `-- index.ts                  # UI components exports
+|   |-- ui/                          # Common UI elements
+|   |   |-- utils/                    # UI utilities
+|   |   |   `-- animations.ts         # Animation utilities
+|   |   |-- AchievementCard.tsx       # Achievement display component
+|   |   |-- AchievementUnlock.tsx     # Achievement unlock modal
+|   |   |-- Badge.tsx                 # Badge component
+|   |   |-- BudgetInput.tsx           # Budget input component
+|   |   |-- Button.tsx               # Reusable button component
+|   |   |-- Card.tsx                 # Card component for displaying content
+|   |   |-- CategoryPicker.tsx        # Category selection component
+|   |   |-- CircularProgress.tsx      # Progress indicator component
+|   |   |-- ConfettiExplosion.tsx     # Celebration animation
+|   |   |-- DatePicker.tsx            # Date selection component
+|   |   |-- Input.tsx                # Input component with validation
+|   |   |-- RecurringTransactionInput.tsx  # Recurring transaction form
+|   |   |-- SegmentedControl.tsx      # Segmented control component
+|   |   |-- StatCard.tsx              # Statistics card component
+|   |   |-- TransactionCard.tsx       # Transaction display component
+|   |   |-- TransactionList.tsx       # Transaction list component
+|   |   `-- index.ts                  # UI components exports
+|   |-- EditScreenInfo.tsx            # Screen info editor
+|   |-- ExternalLink.tsx              # External link component
+|   |-- StyledText.tsx               # Text styling component
+|   |-- Themed.tsx                   # Theme-aware components
+|   |-- __tests__/                   # Test files
+|   |   `-- StyledText-test.js       # Text component tests
+|   |-- useClientOnlyValue.ts        # Client-side value hook
+|   |-- useClientOnlyValue.web.ts    # Web-specific client value hook
+|   |-- useColorScheme.ts            # Color scheme hook
+|   `-- useColorScheme.web.ts        # Web-specific color scheme hook
 |-- constants/                       # Application constants
-|   |-- theme.ts                     # Theme constants and configurations
-|   |-- achievements.ts              # Achievement definitions
-|   `-- categories.ts               # Transaction categories
-|-- context/                        # React Context Providers
-|   |-- auth.tsx                    # Authentication context provider
-|   |-- supabase.tsx               # Supabase context provider
-|   `-- user.tsx                   # User context provider
-|-- lib/                           # Core application logic
-|   |-- hooks/                     # Custom React Hooks
-|   |   |-- useCategories.ts        # Category management hook
-|   |   |-- useAchievementProgress.ts # Achievement tracking hook
-|   |   |-- useTransactions.ts      # Transaction management hook
-|   |   |-- useSpendingStats.ts     # Spending analytics hook
-|   |   |-- useBudgetProgress.ts    # Budget tracking hook
-|   |   `-- useRewards.ts          # Rewards system hook
-|   |-- services/                  # Business logic services
-|   |   |-- budget-service.ts       # Budget management service
-|   |   |-- rewards-service.ts      # Rewards system service
-|   |   `-- transaction.service.ts  # Transaction management service
-|   |-- types/                     # TypeScript type definitions
-|   |   `-- budget.ts               # Budget-related types
-|   |-- utils/                     # Utility functions
-|   |   `-- currency.ts             # Currency formatting utilities
-|   |-- validation/                # Data validation
-|   |   `-- budget-schema.ts        # Budget data validation schemas
-|   |-- cache.ts                   # Caching implementation
-|   |-- database.ts                # Database operations
-|   |-- enhanced-hooks.ts          # Enhanced React hooks
-|   |-- hooks.ts                   # Common hooks
-|   |-- query-client.ts            # React Query configuration
-|   `-- supabase.ts               # Supabase client configuration
-|-- link/                         # Deep linking configuration
-|   |-- index.d.ts                # Deep linking type definitions
-|   `-- index.js                  # Deep linking implementation
-|-- node/                         # Node.js specific utilities
-|   |-- getExpoConstantsManifest.js  # Expo constants helper
-|   `-- render.js                 # Server-side rendering utility
-|-- plugin/                       # Expo plugin configuration
-|   |-- src/                      # Plugin source code
-|   |   `-- index.ts              # Plugin entry point
-|   |-- jest.config.js            # Jest test configuration
-|   |-- options.json              # Plugin options
-|   `-- tsconfig.json             # TypeScript configuration for plugin
-|-- rsc/                         # React Server Components
-|   |-- entry.js                  # RSC entry point
-|   |-- headers.d.ts              # Header type definitions
-|   |-- headers.js                # Header utilities
-|   |-- index.js                  # RSC exports
-|   `-- internal.js               # Internal RSC utilities
-|-- supabase/                    # Supabase backend configuration
-|   |-- functions/               # Serverless functions
-|   |   |-- create-default-categories/  # Category initialization
-|   |   |   `-- index.ts          # Function implementation
-|   |   |-- calculate-achievements/   # Achievement processing
-|   |   |   `-- index.ts          # Achievement calculation
-|   |   `-- spending-analytics/      # Spending analysis
-|   |       `-- index.ts          # Analytics processing
-|   |-- migrations/              # Database migrations
-|   |   |-- 20231230_initial_schema.sql      # Initial schema
-|   |   |-- 20250102_add_default_categories.sql  # Add categories
-|   |   `-- 20250102_rollback_categories.sql    # Rollback script
-|   |-- scripts/                # Database management scripts
-|   |   |-- RLsec.md            # Security documentation
-|   |   |-- dbtest.md           # Database testing guide
-|   |   `-- schema.md           # Schema documentation
-|   `-- config.toml             # Supabase configuration
-|-- theme/                      # Theme configuration
-|   |-- ThemeProvider.tsx       # Theme context provider
-|   |-- index.ts               # Theme exports
-|   `-- theme.config.ts        # Theme configuration
-|-- types/                     # Global TypeScript types
-|   |-- database.ts            # Database types
-|   |-- expect.d.ts            # Test expectation types
-|   |-- index.d.ts             # Global type declarations
-|   `-- transactions.ts        # Transaction types
-|-- README.md                  # Project documentation and setup instructions
-|-- _async-server-import.js    # Async server import utility
-|-- _ctx-html.js              # HTML context utilities
-|-- _ctx-shared.js            # Shared context utilities
-|-- _ctx.android.js           # Android-specific context
-|-- _ctx.d.ts                 # Context type definitions
-|-- _ctx.ios.js               # iOS-specific context
-|-- _ctx.js                   # Base context implementation
-|-- _ctx.web.js               # Web-specific context
-|-- _error.js                 # Error handling utilities
-|-- app.js                    # Main application entry point
-|-- app.json                  # Expo application configuration
-|-- app.plugin.js             # Expo plugin configuration
-|-- babel.config.js           # Babel configuration
-|-- babel.js                  # Babel utilities
-|-- budget.md                 # Budget feature documentation
-|-- dbschema.md              # Database schema documentation
-|-- doctor.js                # Development diagnostics utility
-|-- drawer.d.ts              # Drawer navigation types
-|-- drawer.js                # Drawer navigation implementation
-|-- entry-classic.js         # Classic entry point
-|-- entry.js                 # Modern entry point
-|-- expo-module.config.json  # Expo module configuration
-|-- head.d.ts                # Head component types
-|-- head.js                  # Head component implementation
-|-- html.d.ts                # HTML utility types
-|-- html.js                  # HTML utilities
-|-- implementation.md        # Implementation documentation
-|-- index.d.ts              # Root type definitions
-|-- index.js                # Root entry point
-|-- metro.config.js         # Metro bundler configuration
-|-- package-lock.json       # Dependency lock file
-|-- package.json            # Project dependencies and scripts
-|-- requirements.md         # Project requirements documentation
-|-- rewards.md              # Rewards system documentation
-|-- analytics.md            # Analytics system documentation
-|-- screens.md             # Screen documentation
-|-- server.d.ts            # Server types
-|-- server.js              # Server implementation
-|-- stack.d.ts             # Stack navigation types
-|-- stack.js               # Stack navigation implementation
-|-- tabs.d.ts             # Tab navigation types
-|-- tabs.js               # Tab navigation implementation
-|-- testing-library.d.ts  # Testing utility types
-|-- testing-library.js    # Testing utilities
-|-- tree.md              # Project structure documentation
-|-- tsconfig.json        # TypeScript configuration
-|-- ui.d.ts             # UI component types
-|-- ui.js               # UI utilities
-|-- uiinstructions.md   # UI development guidelines
-`-- userstories.md      # User stories documentation
+|   `-- Colors.ts                    # Color definitions
+|-- context/                        # Global context providers
+|   |-- auth.tsx                    # Authentication context
+|   |-- settings-context.tsx        # Settings context
+|   |-- settings.tsx                # Settings provider
+|   |-- supabase-context.tsx        # Supabase context
+|   |-- supabase.tsx                # Supabase provider
+|   |-- user-context.tsx            # User context
+|   `-- user.tsx                    # User provider
+|-- android/                       # Android native code
+|-- ios/                          # iOS native code
+|-- app.config.ts                 # Expo configuration
+|-- app.json                      # App metadata
+|-- expo-env.d.ts                 # Expo environment types
+|-- implementation.md             # Implementation documentation
+|-- requirements.md               # Project requirements
+|-- tree.md                      # Project structure documentation
+`-- tsconfig.json                # TypeScript configuration

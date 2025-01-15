@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Surface, useTheme } from 'react-native-paper';
 import { Screen } from '../../components/layout';
-import { EmptyState } from '../../components/feedback/EmptyState';
+import { ErrorState } from '../../components/feedback/ErrorState';
 import { useRouter } from 'expo-router';
 
 export default function EmptyStatesScreen() {
@@ -72,7 +72,7 @@ export default function EmptyStatesScreen() {
         {examples.map((example, index) => (
           <Surface key={index} style={styles.card} elevation={1}>
             <View style={styles.cardContent}>
-              <EmptyState {...example} />
+              <ErrorState {...example} />
             </View>
           </Surface>
         ))}

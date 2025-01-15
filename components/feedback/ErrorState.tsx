@@ -14,7 +14,7 @@ type EmptyStateProps = {
   isError?: boolean;
 };
 
-export function EmptyState({
+export function ErrorState({
   title,
   description,
   icon,
