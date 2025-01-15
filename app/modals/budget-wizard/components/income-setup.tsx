@@ -5,6 +5,7 @@ import { useBudget } from '../context/budget-context';
 import { budgetSchema } from '../../../../lib/validation/budget-schema';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface IncomeSetupProps {
   onNext: () => void;
@@ -12,6 +13,7 @@ interface IncomeSetupProps {
 
 export default function IncomeSetup({ onNext }: IncomeSetupProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { state, dispatch } = useBudget();
   const [monthlyIncome, setMonthlyIncome] = useState(state.income.amount ? state.income.amount.toString() : '');
   const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>(state.income.frequency || 'monthly');
@@ -103,85 +105,89 @@ export default function IncomeSetup({ onNext }: IncomeSetupProps) {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.content}>
-        <Surface style={styles.headerCard} elevation={1}>
+      <Animated.ScrollView
+        entering={FadeIn.duration(300)}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: insets.bottom + 84,
+            paddingTop: 16,
+            paddingHorizontal: 16
+          }
+        ]}
+      >
+        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level2 }]}>
           <MaterialCommunityIcons 
-            name="wallet-outline" 
-            size={24} 
+            name="currency-usd" 
+            size={32} 
             color={theme.colors.primary}
+            style={styles.icon} 
           />
-          <Text variant="titleLarge" style={styles.title}>
+          <Text 
+            variant="headlineMedium" 
+            style={[styles.title, { color: theme.colors.onSurface }]}
+          >
             Let's Set Up Your Budget
           </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
+          <Text 
+            variant="bodyLarge" 
+            style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+          >
             First, tell us about your income to help calculate your daily budget.
           </Text>
         </Surface>
-        
-        <View style={styles.form}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            What's your take-home pay?
+
+        <Surface style={[styles.inputCard, { backgroundColor: theme.colors.elevation.level2 }]}>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {getIncomeLabel()}
           </Text>
-          
           <TextInput
-            label={getIncomeLabel()}
+            mode="outlined"
             value={monthlyIncome}
             onChangeText={handleIncomeChange}
             keyboardType="decimal-pad"
             left={<TextInput.Affix text="$" />}
             style={styles.input}
             error={!!error}
+            theme={{
+              colors: {
+                primary: theme.colors.primary,
+                error: theme.colors.error,
+              },
+            }}
           />
-          
-          {error && (
-            <HelperText type="error" visible={true}>
-              {error}
-            </HelperText>
-          )}
+          {error && <HelperText type="error">{error}</HelperText>}
 
-          <Text variant="titleMedium" style={[styles.sectionTitle, styles.frequencyTitle]}>
+          <Text 
+            variant="titleMedium" 
+            style={[styles.frequencyLabel, { color: theme.colors.onSurface }]}
+          >
             How often do you receive your paycheck?
           </Text>
-          
           <SegmentedButtons
             value={frequency}
-            onValueChange={(value) => {
-              setFrequency(value as typeof frequency);
-              setError(null);
-            }}
+            onValueChange={value => setFrequency(value as typeof frequency)}
             buttons={[
-              { 
-                value: 'weekly', 
-                label: 'Weekly',
-                checkedColor: theme.colors.primary,
-              },
-              { 
-                value: 'biweekly', 
-                label: 'Biweekly',
-                checkedColor: theme.colors.primary,
-              },
-              { 
-                value: 'monthly', 
-                label: 'Monthly',
-                checkedColor: theme.colors.primary,
-              },
+              { value: 'weekly', label: 'Weekly' },
+              { value: 'biweekly', label: 'Biweekly' },
+              { value: 'monthly', label: 'Monthly' },
             ]}
+            style={styles.segmentedButtons}
           />
-        </View>
-      </View>
+        </Surface>
 
-      <Surface style={styles.footer} elevation={1}>
-        <Button
-          mode="contained"
-          onPress={handleContinue}
-          disabled={!monthlyIncome}
-          contentStyle={styles.buttonContent}
-        >
-          Continue
-        </Button>
-      </Surface>
+        <View style={[styles.buttonContainer, { marginBottom: Platform.OS === 'ios' ? 0 : 16 }]}>
+          <Button 
+            mode="contained"
+            onPress={handleContinue}
+            style={styles.button}
+          >
+            Continue
+          </Button>
+        </View>
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -189,46 +195,46 @@ export default function IncomeSetup({ onNext }: IncomeSetupProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
-  content: {
-    flex: 1,
-    padding: 16,
+  scrollContent: {
+    flexGrow: 1,
   },
-  headerCard: {
-    padding: 16,
+  card: {
+    padding: 20,
     borderRadius: 12,
     marginBottom: 16,
     alignItems: 'center',
   },
+  icon: {
+    marginBottom: 12,
+  },
   title: {
-    marginTop: 8,
-    marginBottom: 4,
     textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.7,
-    paddingHorizontal: 8,
   },
-  form: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-  },
-  frequencyTitle: {
-    marginTop: 16,
+  inputCard: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   input: {
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  footer: {
-    padding: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+  frequencyLabel: {
+    marginTop: 24,
+    marginBottom: 12,
   },
-  buttonContent: {
-    paddingVertical: 8,
+  segmentedButtons: {
+    marginTop: 8,
+  },
+  buttonContainer: {
+    marginTop: 'auto',
+  },
+  button: {
+    borderRadius: 8,
   },
 });

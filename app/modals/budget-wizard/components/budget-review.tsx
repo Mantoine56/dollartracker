@@ -1,39 +1,58 @@
 import { useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, Surface, useTheme, Button } from 'react-native-paper';
 import { useBudget } from '../context/budget-context';
 import { formatCurrency } from '../../../../lib/utils/currency';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BudgetReviewProps {
   onBack: () => void;
   onComplete: () => void;
 }
 
-function SummaryItem({ 
+function SummaryCard({ 
   icon, 
   title, 
   amount, 
-  subtitle 
+  subtitle,
+  fullWidth = false,
 }: { 
   icon: keyof typeof MaterialCommunityIcons.glyphMap; 
   title: string; 
   amount: number; 
   subtitle: string;
+  fullWidth?: boolean;
 }) {
   const theme = useTheme();
   return (
-    <Surface style={styles.summaryCard} elevation={1}>
+    <Surface 
+      style={[
+        styles.summaryCard, 
+        fullWidth && styles.fullWidthCard,
+        { backgroundColor: theme.colors.elevation.level2 }
+      ]} 
+    >
       <MaterialCommunityIcons 
         name={icon} 
         size={24} 
         color={theme.colors.primary} 
+        style={styles.cardIcon}
       />
-      <Text variant="titleMedium">{title}</Text>
-      <Text variant="headlineSmall" style={styles.amount}>
+      <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+        {title}
+      </Text>
+      <Text 
+        variant="titleLarge" 
+        style={[styles.amount, { color: theme.colors.onSurface }]}
+      >
         {formatCurrency(amount)}
       </Text>
-      <Text variant="bodyMedium" style={styles.cardSubtitle}>
+      <Text 
+        variant="bodySmall" 
+        style={[styles.cardSubtitle, { color: theme.colors.onSurfaceVariant }]}
+      >
         {subtitle}
       </Text>
     </Surface>
@@ -42,6 +61,7 @@ function SummaryItem({
 
 export default function BudgetReview({ onBack, onComplete }: BudgetReviewProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { state, saveBudget } = useBudget();
 
   const handleFinish = useCallback(async () => {
@@ -54,92 +74,83 @@ export default function BudgetReview({ onBack, onComplete }: BudgetReviewProps) 
   }, [saveBudget, onComplete]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Surface style={styles.header} elevation={1}>
-          <Text variant="headlineMedium" style={styles.title}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <Animated.ScrollView
+        entering={FadeIn.duration(300)}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: insets.bottom + 84,
+            paddingTop: 16,
+            paddingHorizontal: 16
+          }
+        ]}
+      >
+        <Surface style={[styles.headerCard, { backgroundColor: theme.colors.elevation.level2 }]}>
+          <MaterialCommunityIcons 
+            name="chart-pie" 
+            size={24} 
+            color={theme.colors.primary}
+            style={styles.headerIcon} 
+          />
+          <Text 
+            variant="titleLarge" 
+            style={[styles.title, { color: theme.colors.onSurface }]}
+          >
             Your Budget Summary
           </Text>
-          <Text variant="bodyLarge" style={styles.subtitle}>
+          <Text 
+            variant="bodyMedium" 
+            style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+          >
             Here's how we've organized your finances to help you meet your goals.
           </Text>
         </Surface>
 
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryRow}>
-            <Surface style={styles.summaryCard} elevation={1}>
-              <View style={styles.cardContent}>
-                <MaterialCommunityIcons 
-                  name="home" 
-                  size={24} 
-                  color={theme.colors.primary} 
-                />
-                <Text variant="titleMedium">Fixed Expenses</Text>
-                <Text variant="headlineSmall" style={styles.amount}>
-                  {formatCurrency(state.fixedExpenses)}
-                </Text>
-                <Text variant="bodyMedium" style={styles.cardSubtitle}>
-                  Rent, utilities, etc.
-                </Text>
-              </View>
-            </Surface>
-
-            <Surface style={styles.summaryCard} elevation={1}>
-              <View style={styles.cardContent}>
-                <MaterialCommunityIcons 
-                  name="piggy-bank" 
-                  size={24} 
-                  color={theme.colors.primary} 
-                />
-                <Text variant="titleMedium">Monthly Savings</Text>
-                <Text variant="headlineSmall" style={styles.amount}>
-                  {formatCurrency(state.savingsTarget)}
-                </Text>
-                <Text variant="bodyMedium" style={styles.cardSubtitle}>
-                  Your savings goal
-                </Text>
-              </View>
-            </Surface>
-          </View>
-
-          <Surface style={styles.spendingCard} elevation={1}>
-            <View style={styles.cardContent}>
-              <MaterialCommunityIcons 
-                name="cash-multiple" 
-                size={24} 
-                color={theme.colors.primary} 
-              />
-              <Text variant="titleMedium">Monthly Spending Budget</Text>
-              <Text variant="headlineSmall" style={styles.amount}>
-                {formatCurrency(state.spendingBudget)}
-              </Text>
-              <Text variant="bodyMedium" style={styles.cardSubtitle}>
-                {formatCurrency(state.dailyAllowance)} daily allowance
-              </Text>
-            </View>
-          </Surface>
+        <View style={styles.summaryRow}>
+          <SummaryCard
+            icon="home"
+            title="Fixed Expenses"
+            amount={state.fixedExpenses}
+            subtitle="Rent, utilities, etc."
+          />
+          <SummaryCard
+            icon="piggy-bank"
+            title="Monthly Savings"
+            amount={state.savingsTarget}
+            subtitle="Your savings goal"
+          />
         </View>
-      </View>
 
-      <Surface style={styles.buttonContainer} elevation={1}>
-        <Button 
-          mode="outlined" 
-          onPress={onBack}
-          style={styles.button}
-          labelStyle={styles.buttonLabel}
-        >
-          Back
-        </Button>
-        <Button 
-          mode="contained" 
-          onPress={handleFinish}
-          style={[styles.button, styles.finishButton]}
-          labelStyle={styles.buttonLabel}
-        >
-          Finish
-        </Button>
-      </Surface>
-    </View>
+        <SummaryCard
+          icon="cash-multiple"
+          title="Monthly Spending Budget"
+          amount={state.spendingBudget}
+          subtitle={`${formatCurrency(state.dailyAllowance)} daily allowance`}
+          fullWidth
+        />
+
+        <View style={[styles.buttonContainer, { marginBottom: Platform.OS === 'ios' ? 0 : 16 }]}>
+          <Button
+            mode="outlined"
+            onPress={onBack}
+            style={[styles.button, { marginBottom: 8 }]}
+          >
+            Back
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleFinish}
+            style={styles.button}
+          >
+            Finish
+          </Button>
+        </View>
+      </Animated.ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -147,80 +158,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-    paddingTop: 0,
-    paddingHorizontal: 16,
+  scrollContent: {
+    flexGrow: 1,
   },
-  header: {
-    padding: 16,
+  headerCard: {
+    padding: 12,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginBottom: 8,
   },
   title: {
     textAlign: 'center',
-    fontWeight: '600',
+    marginBottom: 4,
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.7,
-  },
-  summaryContainer: {
-    gap: 16,
   },
   summaryRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
+    padding: 12,
     borderRadius: 12,
-    height: 140,
-  },
-  spendingCard: {
-    borderRadius: 12,
-    height: 140,
-  },
-  cardContent: {
-    flex: 1,
-    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
+  },
+  fullWidthCard: {
+    marginBottom: 12,
+  },
+  cardIcon: {
+    marginBottom: 8,
   },
   amount: {
-    fontWeight: '600',
-    marginTop: 4,
+    marginTop: 2,
+    marginBottom: 2,
   },
   cardSubtitle: {
-    opacity: 0.7,
     textAlign: 'center',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    marginTop: 'auto',
   },
   button: {
-    flex: 1,
     borderRadius: 8,
-  },
-  buttonLabel: {
-    fontSize: 16,
-    paddingVertical: 4,
-  },
-  finishButton: {
-    flex: 2,
   },
 });

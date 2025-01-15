@@ -1,11 +1,13 @@
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme, List, Switch, Text, Divider, Button, SegmentedButtons, ActivityIndicator } from 'react-native-paper';
+import { useTheme, List, Switch, Text, Divider, Button, SegmentedButtons, ActivityIndicator, Portal, Dialog } from 'react-native-paper';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuth } from '../../context/auth';
 import { useSettings } from '../../context/settings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Screen } from '../../components/layout';
+import { useUser } from '../../context/user';
+import { supabase } from '../../lib/supabase';
 import React from 'react';
 
 export default function SettingsScreen() {
@@ -13,8 +15,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { state: settings, updateSettings } = useSettings();
+  const { user } = useUser();
   
   const [isBiometricAvailable, setIsBiometricAvailable] = React.useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
     checkBiometricAvailability();
@@ -34,12 +39,71 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you absolutely sure you want to delete your account? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => setDeleteDialogVisible(true),
+        },
+      ],
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      
+      // Delete user data from Supabase
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      // Delete auth user
+      const { error: authError } = await supabase.auth.admin.deleteUser(
+        user?.id as string
+      );
+
+      if (authError) throw authError;
+
+      await signOut();
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert('Error', 'Failed to delete account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogVisible(false);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.content}
       >
+        <List.Section>
+          <List.Subheader>Account Information</List.Subheader>
+          <List.Item
+            title={user?.email || 'No email'}
+            description={`Member since ${new Date(user?.created_at || '').toLocaleDateString()}`}
+            left={props => <List.Icon {...props} icon="account" />}
+          />
+        </List.Section>
+
+        <Divider />
+
         <List.Section>
           <List.Subheader>Budget Management</List.Subheader>
           <List.Item
@@ -162,18 +226,61 @@ export default function SettingsScreen() {
           />
         </List.Section>
 
-        <View style={styles.logoutContainer}>
-          <Button
-            mode="outlined"
-            onPress={handleLogout}
-            style={styles.logoutButton}
-            textColor={theme.colors.error}
-            disabled={settings.isSaving}
-          >
-            Sign Out
-          </Button>
+        <View style={styles.dangerZone}>
+          <List.Section>
+            <List.Subheader>Danger Zone</List.Subheader>
+            <List.Item
+              title="Sign Out"
+              description="Sign out of your account"
+              left={props => <List.Icon {...props} icon="logout" color={theme.colors.error} />}
+              onPress={() => {
+                Alert.alert(
+                  'Sign Out',
+                  'Are you sure you want to sign out?',
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                    },
+                    {
+                      text: 'Sign Out',
+                      style: 'destructive',
+                      onPress: handleLogout,
+                    },
+                  ],
+                );
+              }}
+            />
+            <Divider />
+            <List.Item
+              title="Delete Account"
+              description="Permanently delete your account and all data"
+              left={props => <List.Icon {...props} icon="delete" color={theme.colors.error} />}
+              onPress={handleDeleteAccount}
+            />
+          </List.Section>
         </View>
       </ScrollView>
+
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+          <Dialog.Title>Final Confirmation</Dialog.Title>
+          <Dialog.Content>
+            <Text>This will permanently delete your account and all associated data. This action cannot be undone. Are you sure you want to proceed?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
+            <Button
+              mode="contained"
+              textColor={theme.colors.error}
+              loading={isDeleting}
+              onPress={confirmDeleteAccount}
+            >
+              Delete Forever
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }
@@ -199,11 +306,7 @@ const styles = StyleSheet.create({
   savingIndicator: {
     marginLeft: 16,
   },
-  logoutContainer: {
-    marginTop: 32,
-    marginBottom: 16,
-  },
-  logoutButton: {
-    borderColor: 'transparent',
+  dangerZone: {
+    marginTop: 'auto',
   },
 });

@@ -5,6 +5,8 @@ import { useBudget } from '../context/budget-context';
 import { budgetSchema } from '../../../../lib/validation/budget-schema';
 import { formatCurrency } from '../../../../lib/utils/currency';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SpendingSetupProps {
   onNext: () => void;
@@ -13,6 +15,7 @@ interface SpendingSetupProps {
 
 export default function SpendingSetup({ onNext, onBack }: SpendingSetupProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { state, dispatch } = useBudget();
   const [fixedExpenses, setFixedExpenses] = useState(state.fixedExpenses ? state.fixedExpenses.toString() : '');
   const [savingsTarget, setSavingsTarget] = useState(state.savingsTarget ? state.savingsTarget.toString() : '');
@@ -129,78 +132,108 @@ export default function SpendingSetup({ onNext, onBack }: SpendingSetupProps) {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.content}>
-        <Surface style={styles.headerCard} elevation={1}>
+      <Animated.ScrollView
+        entering={FadeIn.duration(300)}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: insets.bottom + 84,
+            paddingTop: 16,
+            paddingHorizontal: 16
+          }
+        ]}
+      >
+        <Surface style={[styles.card, { backgroundColor: theme.colors.elevation.level2 }]}>
           <MaterialCommunityIcons 
             name="calculator-variant" 
-            size={24} 
+            size={32} 
             color={theme.colors.primary}
+            style={styles.icon} 
           />
-          <Text variant="titleLarge" style={styles.title}>
+          <Text 
+            variant="headlineMedium" 
+            style={[styles.title, { color: theme.colors.onSurface }]}
+          >
             Plan Your Monthly Expenses
           </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
+          <Text 
+            variant="bodyLarge" 
+            style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+          >
             Let's break down your monthly income of {formatCurrency(state.income.amount)} into fixed expenses
             and savings goals.
           </Text>
         </Surface>
 
-        <View style={styles.form}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            What are your fixed monthly expenses?
+        <Surface style={[styles.inputCard, { backgroundColor: theme.colors.elevation.level2 }]}>
+          <Text 
+            variant="titleMedium" 
+            style={[styles.sectionTitle, { color: theme.colors.onSurface }]}
+          >
+            Fixed Expenses (rent, utilities, etc.)
           </Text>
-          
           <TextInput
-            label="Fixed Expenses (rent, utilities, etc.)"
+            mode="outlined"
             value={fixedExpenses}
             onChangeText={(value) => handleNumberInput(value, setFixedExpenses)}
             keyboardType="decimal-pad"
             left={<TextInput.Affix text="$" />}
             style={styles.input}
             error={!!error}
+            theme={{
+              colors: {
+                primary: theme.colors.primary,
+                error: theme.colors.error,
+              },
+            }}
           />
 
-          <Text variant="titleMedium" style={[styles.sectionTitle, styles.savingsTitle]}>
-            How much would you like to save monthly?
+          <Text 
+            variant="titleMedium" 
+            style={[styles.savingsTitle, { color: theme.colors.onSurface }]}
+          >
+            Monthly Savings Target
           </Text>
-          
           <TextInput
-            label="Monthly Savings Target"
+            mode="outlined"
             value={savingsTarget}
             onChangeText={(value) => handleNumberInput(value, setSavingsTarget)}
             keyboardType="decimal-pad"
             left={<TextInput.Affix text="$" />}
             style={styles.input}
             error={!!error}
+            theme={{
+              colors: {
+                primary: theme.colors.primary,
+                error: theme.colors.error,
+              },
+            }}
           />
           
-          {error && (
-            <HelperText type="error" visible={true}>
-              {error}
-            </HelperText>
-          )}
-        </View>
-      </View>
+          {error && <HelperText type="error">{error}</HelperText>}
+        </Surface>
 
-      <Surface style={styles.footer} elevation={1}>
-        <Button
-          mode="outlined"
-          onPress={onBack}
-          style={styles.footerButton}
-        >
-          Back
-        </Button>
-        <Button
-          mode="contained"
-          onPress={handleContinue}
-          disabled={!fixedExpenses || !savingsTarget}
-          style={styles.footerButton}
-        >
-          Continue
-        </Button>
-      </Surface>
+        <View style={[styles.buttonContainer, { marginBottom: Platform.OS === 'ios' ? 0 : 16 }]}>
+          <Button
+            mode="outlined"
+            onPress={onBack}
+            style={[styles.button, { marginBottom: 8 }]}
+            textColor={theme.colors.primary}
+          >
+            Back
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleContinue}
+            disabled={!fixedExpenses || !savingsTarget}
+            style={styles.button}
+          >
+            Continue
+          </Button>
+        </View>
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -208,48 +241,46 @@ export default function SpendingSetup({ onNext, onBack }: SpendingSetupProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
-  content: {
-    flex: 1,
-    padding: 16,
+  scrollContent: {
+    flexGrow: 1,
   },
-  headerCard: {
-    padding: 16,
+  card: {
+    padding: 20,
     borderRadius: 12,
     marginBottom: 16,
     alignItems: 'center',
   },
+  icon: {
+    marginBottom: 12,
+  },
   title: {
-    marginTop: 8,
-    marginBottom: 4,
     textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     textAlign: 'center',
-    opacity: 0.7,
-    paddingHorizontal: 8,
   },
-  form: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-  },
-  savingsTitle: {
-    marginTop: 16,
+  inputCard: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   input: {
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 16,
   },
-  footer: {
-    padding: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-    flexDirection: 'row',
-    gap: 12,
+  sectionTitle: {
+    marginBottom: 4,
   },
-  footerButton: {
-    flex: 1,
+  savingsTitle: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  buttonContainer: {
+    marginTop: 'auto',
+  },
+  button: {
+    borderRadius: 8,
   },
 });

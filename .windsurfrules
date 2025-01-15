@@ -103,12 +103,6 @@
 
 Do not start expo servers on your own, i will do those in a separate terminal application. Just provide me the promt and i will do it myself. You can run other terminal commands.
 
-  Package Management
-  - Always use --legacy-peer-deps flag when installing new packages
-  - Command format: npm install [package-name] --legacy-peer-deps
-  - This applies to both direct package installations and expo install commands
-  - When using expo install, add --npm flag to force npm usage with legacy peer deps
-
   Error Handling and Validation
   - Use Zod for runtime validation and error handling.
   - Implement proper error logging using Sentry or a similar service.

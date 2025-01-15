@@ -89,17 +89,8 @@ export default function BudgetWizard() {
                 color={theme.colors.primary}
                 style={progressBarStyle}
               />
-              <View 
-                style={[
-                  progressBarStyle, 
-                  { 
-                    width: `${getProgress() * 100}%`,
-                    backgroundColor: theme.colors.primary 
-                  }
-                ]} 
-              />
               <Text variant="bodySmall" style={stepIndicatorStyle}>
-                Step {currentStep === 'income' ? '1' : currentStep === 'spending' ? '2' : '3'} of 3
+                Step {currentStep === 'income' ? 1 : currentStep === 'spending' ? 2 : 3} of 3
               </Text>
             </Surface>
 
