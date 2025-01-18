@@ -132,6 +132,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export default SettingsProvider;
+
 export function useSettings() {
   const context = useContext(SettingsContext);
   if (!context) {

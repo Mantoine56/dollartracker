@@ -1,12 +1,35 @@
+/**
+ * File: app/(auth)/login.tsx
+ * Description: Login screen component for DollarTracker app
+ * This component handles user authentication through email/password,
+ * Google Sign-In, and Apple Sign-In (iOS only).
+ */
+
 import React, { useState } from 'react';
 import { View, StyleSheet, Platform, Pressable, KeyboardAvoidingView, ScrollView } from 'react-native';
-import { Text, Button, Surface, useTheme, TextInput } from 'react-native-paper';
+import { Text, Button, Surface, useTheme, TextInput, HelperText } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '../../components/layout';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
 
+// Validation schema for authentication inputs
+const authSchema = z.object({
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+/**
+ * LoginScreen Component
+ * Provides a user interface for authentication with the following features:
+ * - Email/password authentication
+ * - Social authentication (Google, Apple)
+ * - Password reset functionality
+ * - New user registration
+ */
 export default function LoginScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -16,29 +39,47 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
+  /**
+   * Handles email authentication
+   * Validates user input using the authSchema
+   * Calls the signInWithEmail or signUpWithEmail function based on the isLogin state
+   */
   const handleEmailAuth = async () => {
     try {
       setError(null);
       setLoading(true);
+
+      const credentials = authSchema.parse({ email, password });
+      
       if (isLogin) {
-        await signInWithEmail(email, password);
+        await signInWithEmail(credentials.email, credentials.password);
         router.replace('/(tabs)');
       } else {
-        const { needsEmailConfirmation } = await signUpWithEmail(email, password);
+        const { needsEmailConfirmation } = await signUpWithEmail(credentials.email, credentials.password);
         if (needsEmailConfirmation) {
-          setError('Please check your email to confirm your account before signing in.');
-          setIsLogin(true); // Switch to login mode
+          router.push('/(auth)/confirm');
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please try again.');
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Authentication failed. Please try again.');
+      }
       console.error('Email auth error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Handles Google Sign-In authentication
+   * Calls the signInWithGoogle function
+   */
   const handleGoogleSignIn = async () => {
     try {
       setError(null);
@@ -53,6 +94,10 @@ export default function LoginScreen() {
     }
   };
 
+  /**
+   * Handles Apple Sign-In authentication (iOS only)
+   * Calls the signInWithApple function
+   */
   const handleAppleSignIn = async () => {
     try {
       setError(null);
@@ -68,26 +113,20 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen style={styles.screen}>
-      <LinearGradient
-        colors={[theme.colors.primary, theme.colors.primaryContainer]}
-        style={styles.gradient}
-      >
-        <KeyboardAvoidingView 
+    <LinearGradient
+      colors={[theme.colors.primary, theme.colors.primaryContainer]}
+      style={styles.gradient}
+    >
+      <SafeAreaView style={styles.screen} edges={['top']}>
+        <KeyboardAvoidingView
+          style={styles.screen}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
         >
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.container}>
-              {error && (
-                <Surface style={styles.errorContainer} elevation={1}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </Surface>
-              )}
-              {/* Logo and Title */}
               <View style={styles.header}>
                 <Surface style={styles.logoContainer} elevation={4}>
                   <MaterialCommunityIcons
@@ -99,202 +138,199 @@ export default function LoginScreen() {
                 <Text variant="displaySmall" style={styles.title}>
                   DollarTracker
                 </Text>
-                <Text variant="titleMedium" style={styles.subtitle}>
+                <Text variant="bodyLarge" style={styles.subtitle}>
                   Smart budgeting made simple
                 </Text>
               </View>
 
-              {/* Email Auth Form */}
-              <View style={styles.formContainer}>
+              <Surface style={styles.form} elevation={1}>
                 <TextInput
                   label="Email"
                   value={email}
                   onChangeText={setEmail}
-                  autoCapitalize="none"
                   keyboardType="email-address"
-                  style={styles.input}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  disabled={loading}
+                  error={!!error && error.toLowerCase().includes('email')}
                 />
+                
                 <TextInput
                   label="Password"
                   value={password}
                   onChangeText={setPassword}
-                  secureTextEntry
-                  style={styles.input}
+                  secureTextEntry={!showPassword}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? 'eye-off' : 'eye'}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                  disabled={loading}
+                  error={!!error && error.toLowerCase().includes('password')}
                 />
+
+                {error && <HelperText type="error">{error}</HelperText>}
+
+                {isLogin && (
+                  <Pressable
+                    onPress={() => router.push('/(auth)/forgot-password')}
+                    style={styles.forgotPassword}
+                  >
+                    <Text variant="bodyMedium" style={{ color: theme.colors.primary }}>
+                      Forgot Password?
+                    </Text>
+                  </Pressable>
+                )}
+
                 <Button
                   mode="contained"
                   onPress={handleEmailAuth}
                   loading={loading}
-                  style={styles.emailButton}
+                  disabled={loading}
+                  style={styles.button}
                 >
-                  {isLogin ? 'Sign In' : 'Sign Up'}
+                  {isLogin ? 'Sign In' : 'Create Account'}
                 </Button>
-                <Pressable onPress={() => setIsLogin(!isLogin)}>
-                  <Text style={styles.switchText}>
-                    {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+
+                <View style={styles.divider}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or continue with</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <View style={styles.socialButtons}>
+                  <Button
+                    mode="outlined"
+                    icon="google"
+                    onPress={handleGoogleSignIn}
+                    disabled={loading}
+                    style={[styles.socialButton, styles.googleButton]}
+                    textColor={theme.colors.onSurface}
+                  >
+                    Google
+                  </Button>
+                  {Platform.OS === 'ios' && (
+                    <Button
+                      mode="outlined"
+                      icon="apple"
+                      onPress={handleAppleSignIn}
+                      disabled={loading}
+                      style={[styles.socialButton, styles.appleButton]}
+                      textColor={theme.colors.onSurface}
+                    >
+                      Apple
+                    </Button>
+                  )}
+                </View>
+
+                <Pressable
+                  onPress={() => setIsLogin(!isLogin)}
+                  style={styles.switchAuth}
+                >
+                  <Text variant="bodyMedium" style={styles.switchAuthText}>
+                    {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                    <Text style={{ color: theme.colors.onPrimary, fontWeight: 'bold' }}>
+                      {isLogin ? 'Sign Up' : 'Sign In'}
+                    </Text>
                   </Text>
                 </Pressable>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Social Auth Buttons */}
-              <View style={styles.socialContainer}>
-                <Button
-                  mode="contained-tonal"
-                  onPress={handleGoogleSignIn}
-                  style={styles.socialButton}
-                  contentStyle={styles.buttonContent}
-                  icon={({ size }) => (
-                    <MaterialCommunityIcons 
-                      name="google" 
-                      size={24} 
-                      color={theme.colors.onSurfaceVariant}
-                    />
-                  )}
-                >
-                  Continue with Google
-                </Button>
-
-                {Platform.OS === 'ios' && (
-                  <Button
-                    mode="contained"
-                    onPress={handleAppleSignIn}
-                    style={styles.appleButton}
-                    contentStyle={styles.buttonContent}
-                    textColor="white"
-                    icon={({ size }) => (
-                      <MaterialCommunityIcons 
-                        name="apple" 
-                        size={24} 
-                        color="white"
-                      />
-                    )}
-                  >
-                    Continue with Apple
-                  </Button>
-                )}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Text variant="bodySmall" style={styles.footerText}>
-                  By continuing, you agree to our Terms of Service and Privacy Policy
-                </Text>
-              </View>
+              </Surface>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </LinearGradient>
-    </Screen>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
   gradient: {
     flex: 1,
   },
-  keyboardView: {
+  screen: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   container: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  errorContainer: {
-    backgroundColor: '#ffebee',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#c62828',
-    textAlign: 'center',
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginTop: 64,
+    marginBottom: 32,
   },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
     color: 'white',
+    textAlign: 'center',
     marginBottom: 8,
     fontWeight: 'bold',
   },
   subtitle: {
     color: 'white',
+    textAlign: 'center',
     opacity: 0.9,
   },
-  formContainer: {
-    width: '100%',
+  form: {
+    padding: 24,
+    borderRadius: 16,
     gap: 16,
-    marginTop: 32,
-  },
-  input: {
     backgroundColor: 'white',
   },
-  emailButton: {
+  button: {
     marginTop: 8,
   },
-  switchText: {
-    color: 'white',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 8,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 32,
+    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   dividerText: {
-    color: 'white',
-    marginHorizontal: 16,
+    marginHorizontal: 8,
+    opacity: 0.5,
   },
-  socialContainer: {
-    width: '100%',
-    gap: 16,
+  socialButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
   },
   socialButton: {
-    backgroundColor: 'white',
+    flex: 1,
   },
-  buttonContent: {
-    paddingVertical: 8,
+  googleButton: {
+    borderColor: '#4285F4',
   },
   appleButton: {
-    backgroundColor: '#000',
+    borderColor: '#000000',
   },
-  footer: {
+  switchAuth: {
+    marginTop: 16,
     alignItems: 'center',
-    marginTop: 32,
   },
-  footerText: {
+  switchAuthText: {
     color: 'white',
-    opacity: 0.7,
-    textAlign: 'center',
   },
 });

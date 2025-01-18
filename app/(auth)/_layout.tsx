@@ -19,6 +19,18 @@ export default function AuthLayout() {
           title: 'Sign In',
         }}
       />
+      <Stack.Screen
+        name="forgot-password"
+        options={{
+          title: 'Reset Password',
+        }}
+      />
+      <Stack.Screen
+        name="confirm"
+        options={{
+          title: 'Confirm Email',
+        }}
+      />
     </Stack>
   );
 }

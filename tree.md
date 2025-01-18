@@ -1,5 +1,7 @@
 # DollarTracker Project Structure
 
+This document provides an overview of the project's directory structure and file organization.
+
 .
 |-- app/                                # Main application directory containing all routes and screens
 |   |-- (auth)/                        # Authentication related screens and routes
@@ -128,6 +130,42 @@
 |   |-- supabase.tsx                # Supabase provider
 |   |-- user-context.tsx            # User context
 |   `-- user.tsx                    # User provider
+|-- lib/                           # Core library code
+|   |-- hooks/                      # Custom React hooks
+|   |   |-- queries.ts              # Query-related hooks
+|   |   |-- use-achievement-progress.ts # Achievement tracking hook
+|   |   |-- use-rewards.ts          # Rewards system hook
+|   |   |-- use-supabase-auth.ts    # Supabase auth hook
+|   |   |-- use-supabase.ts         # Supabase client hook
+|   |   |-- use-user.ts             # User management hook
+|   |   `-- useCategories.ts        # Categories management hook
+|   |-- services/                   # Business logic services
+|   |   |-- budget-service.ts       # Budget management service
+|   |   |-- rewards-service.ts      # Rewards system service
+|   |   `-- transaction.service.ts   # Transaction management service
+|   |-- supabase/                   # Supabase integration
+|   |   |-- api.ts                  # API endpoints
+|   |   `-- client.ts               # Supabase client configuration
+|   |-- types/                      # TypeScript type definitions
+|   |   |-- budget.ts               # Budget-related types
+|   |   `-- database.ts             # Database schema types
+|   |-- utils/                      # Utility functions
+|   |   `-- currency.ts             # Currency formatting utilities
+|   |-- validation/                 # Data validation
+|   |   `-- budget-schema.ts        # Budget validation schema
+|   |-- cache.ts                    # Caching logic
+|   |-- database.ts                 # Database configuration
+|   |-- enhanced-hooks.ts           # Enhanced React hooks
+|   |-- hooks.ts                    # Common hooks
+|   |-- query-client.ts             # Query client configuration
+|   `-- supabase.ts                 # Supabase configuration
+|-- supabase/                      # Supabase configuration
+|   `-- migrations/                 # Database migrations
+|       `-- 20250113_initial_schema.sql # Initial database schema
+|-- theme/                         # Theme configuration
+|   |-- ThemeProvider.tsx          # Theme provider component
+|   |-- index.ts                   # Theme exports
+|   `-- theme.config.ts            # Theme configuration
 |-- android/                       # Android native code
 |-- ios/                          # iOS native code
 |-- app.config.ts                 # Expo configuration

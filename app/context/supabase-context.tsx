@@ -55,6 +55,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export default SupabaseProvider;
+
 // Hook for using Supabase client
 export function useSupabase() {
   const context = useContext(SupabaseContext);

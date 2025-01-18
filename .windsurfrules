@@ -1,156 +1,281 @@
   You are an expert in TypeScript, React Native, Expo, and Mobile UI development.
 
-  Code Style and Structure
-  - Write concise, technical TypeScript code with accurate examples.
-  - Use functional and declarative programming patterns; avoid classes.
-  - Prefer iteration and modularization over code duplication.
-  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
-  - Structure files: exported component, subcomponents, helpers, static content, types.
-  - Follow Expo's official documentation for setting up and configuring your projects: https://docs.expo.dev/
+## Project overview
+DollarTracker is a comprehensive personal finance mobile application built with React Native and Expo, designed to help users track their expenses and manage budgets effectively. The app features an intuitive interface with real-time transaction tracking, budget management, and insightful spending analytics powered by Supabase.
 
-  File and folder structure
-  - Use the file tree.md in the root of the project as a reference for where everything is located.
+## Tech Stack
+- Frontend Framework: React Native (v0.76) with Expo (v52)
+- Language: TypeScript with strict mode
+- Navigation: Expo Router with file-based routing
+- UI Components: React Native Paper (Material Design)
+- State Management: React Context and TanStack Query
+- Backend & Database: Supabase
+- Authentication: Expo Auth Session, Apple Authentication, and Local Authentication
+- Data Visualization: Victory Native and React Native Gifted Charts
+- Form Validation: Zod and Yup
+- Animation: React Native Reanimated
+- Testing: Jest with React Test Renderer
 
-  Naming Conventions
-  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
-  - Favor named exports for components.
+## Our .env variables
+All the environment variables are located in the .env file in the root of the project. This file contains the following variables:
+- Supabase variables
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
-  TypeScript Usage
-  - Use TypeScript for all code; prefer interfaces over types.
-  - Avoid enums; use maps instead.
-  - Use functional components with TypeScript interfaces.
-  - Use strict mode in TypeScript for better type safety.
+- Expo Public Variables
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
 
-  Syntax and Formatting
-  - Use the "function" keyword for pure functions.
-  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
-  - Use declarative JSX.
-  - Use Prettier for consistent code formatting.
+- Database Connection
+DATABASE_URL=
 
-  UI and Styling
-  - Use React Native Paper for Material Design components and theming.
-  - Implement responsive design with Flexbox and custom theme system.
-  - Support light/dark mode through React Native Paper's theming.
-  - Ensure high accessibility (a11y) standards using ARIA roles and native accessibility props.
-  - Leverage react-native-reanimated and react-native-gesture-handler for performant animations and gestures.
+- API Endpoints
+EXPO_PUBLIC_API_URL=
+EXPO_PUBLIC_GRAPHQL_URL=
+EXPO_PUBLIC_STORAGE_URL=
 
-  Safe Area Management
-  - Use SafeAreaProvider from react-native-safe-area-context to manage safe areas globally in your app.
-  - Wrap top-level components with SafeAreaView to handle notches, status bars, and other screen insets on both iOS and Android.
-  - Use SafeAreaScrollView for scrollable content to ensure it respects safe area boundaries.
-  - Avoid hardcoding padding or margins for safe areas; rely on SafeAreaView and context hooks.
+-Authentication
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+APPLE_SERVICE_ID=
+APPLE_TEAM_ID=your_apple_team_id
+APPLE_KEY_ID=your_apple_key_id
 
-  Performance Optimization
-  - Minimize the use of useState and useEffect; prefer context and reducers for state management.
-  - Use Expo's AppLoading and SplashScreen for optimized app startup experience.
-  - Optimize images: use WebP format where supported, include size data, implement lazy loading with expo-image.
-  - Implement code splitting and lazy loading for non-critical components with React's Suspense and dynamic imports.
-  - Profile and monitor performance using React Native's built-in tools and Expo's debugging features.
-  - Avoid unnecessary re-renders by memoizing components and using useMemo and useCallback hooks appropriately.
+- App Configuration
+EXPO_PUBLIC_APP_VARIANT=development
+EXPO_PUBLIC_API_URL=http://localhost:54321
 
-  Navigation
-  - Use Expo Router for file-based routing and navigation.
-  - Leverage deep linking and universal links for better user engagement.
-  - Implement type-safe navigation with TypeScript.
+- Feature Flags
+EXPO_PUBLIC_ENABLE_NOTIFICATIONS=true
+EXPO_PUBLIC_ENABLE_ANALYTICS=false
 
-  Navigation Structure (Expo Router)
-  - Use Expo Router for file-based navigation: https://docs.expo.dev/routing/introduction/
-  - Follow the directory structure conventions:
-    * (tabs)/ for bottom tab navigation
-    * _layout.tsx for navigation configuration
-    * Modal screens should be placed in the root app/ directory
-    * Use Stack.Screen with presentation: 'modal' for modal screens
-  - Avoid placing modal screens inside (tabs)/ directory
-  - Configure navigation themes consistently with app theme
-  - Use proper screen nesting:
-    * Root layout (_layout.tsx) should handle both stack and tab navigation
-    * Tab layout ((tabs)/_layout.tsx) should only handle tab-specific screens
+- Debugging
+EXPO_PUBLIC_DEBUG_MODE=true
 
-  Theme Management
-  - Implement a centralized theme provider that:
-    * Properly merges MD3LightTheme with custom theme
-    * Provides consistent access to theme through useTheme hook
-    * Handles safe area insets
-  - Theme setup order:
-    1. Define theme configuration (colors, typography, etc.)
-    2. Create ThemeProvider component with proper nesting:
-       ```tsx
-       <SafeAreaProvider>
-         <PaperProvider theme={paperTheme}>
-           {children}
-         </PaperProvider>
-       </SafeAreaProvider>
-       ```
-    3. Apply theme at the root level before any navigation
-  - Always use theme.colors for styling to maintain consistency
-  - Test theme across all screens and components before deployment
+- Local Development Tools
+STUDIO_URL=http://127.0.0.1:54323
+INBUCKET_URL=http://127.0.0.1:54324
 
-  Component Organization
-  - Organize screens based on navigation structure:
-    * /app/(tabs)/ - Tab-based screens
-    * /app/modals/ - Modal screens (optional directory)
-    * /app/_layout.tsx - Root navigation
-  - Keep modal screens separate from tab screens
-  - Use consistent navigation patterns:
-    * Bottom tabs for main navigation
-    * Modals for temporary UI like forms or setup wizards
-    * Stack navigation for nested flows
+## Current file structure
+|-- app/                                # Main application directory containing all routes and screens
+|   |-- (auth)/                        # Authentication related screens and routes
+|   |   |-- _layout.tsx               # Authentication navigation layout configuration
+|   |   |-- confirm.tsx               # Email/Phone confirmation screen
+|   |   `-- login.tsx                 # User login screen
+|   |-- (tabs)/                       # Main tab navigation screens
+|   |   |-- _layout.tsx               # Tab navigation configuration
+|   |   |-- history.tsx               # Transaction history view
+|   |   |-- incentives.tsx            # User rewards and achievements screen
+|   |   |-- index.tsx                 # Main dashboard/home screen
+|   |   |-- settings.tsx              # Application settings screen
+|   |   `-- stats.tsx                 # Financial statistics and analytics
+|   |-- auth/                         # Additional auth screens
+|   |   |-- _layout.tsx               # Auth navigation layout
+|   |   |-- forgot-password.tsx       # Password recovery screen
+|   |   |-- sign-in.tsx              # Sign in screen
+|   |   `-- sign-up.tsx              # Sign up screen
+|   |-- context/                      # App-level context providers
+|   |   |-- settings-context.tsx      # Settings management context
+|   |   |-- supabase-context.tsx      # Supabase client context
+|   |   `-- user-context.tsx          # User state management context
+|   |-- examples/                     # Example components and screens
+|   |   `-- empty-states.tsx          # Empty state examples
+|   |-- modals/                       # Modal screens and overlays
+|   |   |-- budget-wizard/            # Budget setup wizard
+|   |   |   |-- components/           # Wizard-specific UI components
+|   |   |   |   |-- budget-review.tsx # Budget review step
+|   |   |   |   |-- income-setup.tsx  # Income setup step
+|   |   |   |   `-- spending-setup.tsx # Spending setup step
+|   |   |   |-- context/             # Wizard state management
+|   |   |   |   `-- budget-context.tsx # Budget wizard context
+|   |   |   `-- index.tsx             # Main wizard screen
+|   |   |-- _layout.tsx               # Modal navigation layout
+|   |   |-- export.tsx                # Export data modal
+|   |   |-- privacy.tsx               # Privacy policy modal
+|   |   `-- terms.tsx                 # Terms of service modal
+|   |-- transaction/                  # Transaction management screens
+|   |   |-- _layout.tsx               # Transaction navigation layout
+|   |   `-- new.tsx                   # New transaction creation screen
+|   |-- +html.tsx                     # HTML document configuration
+|   |-- +not-found.tsx               # 404 error page
+|   |-- _layout.tsx                   # Root navigation layout
+|   |-- modal.tsx                     # Modal screen wrapper
+|   `-- reset-password.tsx            # Password reset screen
+|-- assets/                           # Static assets directory
+|   |-- fonts/                        # Custom fonts
+|   |   `-- SpaceMono-Regular.ttf     # Space Mono font
+|   |-- images/                       # App images
+|   |   |-- adaptive-icon.png         # Adaptive app icon
+|   |   |-- favicon.png               # Web favicon
+|   |   |-- icon.png                  # App icon
+|   |   `-- splash-icon.png           # Splash screen icon
+|   |-- error.png                     # Error state illustration
+|   |-- file.png                      # File icon
+|   |-- forward.png                   # Forward navigation icon
+|   |-- icon.png                      # App icon
+|   |-- logotype.png                  # App logotype
+|   |-- pkg.png                       # Package icon
+|   |-- sitemap.png                   # Sitemap illustration
+|   |-- splash.png                    # Splash screen
+|   `-- unmatched.png                 # Unmatched state illustration
+|-- components/                       # Reusable UI components
+|   |-- budget/                       # Budget-related components
+|   |   |-- BudgetCircle.tsx          # Budget progress circle
+|   |   `-- BudgetDashboard.tsx       # Main budget overview component
+|   |-- calendar/                     # Calendar components
+|   |   `-- TransactionCalendar.tsx   # Transaction calendar view
+|   |-- feedback/                     # User feedback components
+|   |   |-- ErrorState.tsx            # Error state component with error handling
+|   |   `-- EmptyState.tsx            # Empty state display component
+|   |-- layout/                       # Core layout components
+|   |   |-- ActionSheet.tsx           # Bottom action sheet
+|   |   |-- BottomBar.tsx            # Navigation bar
+|   |   |-- Container.tsx            # Layout wrapper
+|   |   |-- Drawer.tsx               # Side navigation drawer
+|   |   |-- EmptyState.tsx           # Empty state handler
+|   |   |-- FAB.tsx                  # Floating action button
+|   |   |-- Header.tsx               # App header
+|   |   |-- LoadingOverlay.tsx       # Loading indicator
+|   |   |-- Modal.tsx                # Modal dialog
+|   |   |-- ProgressBar.tsx          # Progress indicator
+|   |   |-- Snackbar.tsx             # Notification snackbar
+|   |   |-- Toast.tsx                # Toast messages
+|   |   `-- index.ts                 # Layout components exports
+|   |-- transactions/                # Transaction-related components
+|   |   |-- AddTransactionButton.tsx  # Transaction creation button
+|   |   `-- TransactionForm.tsx       # Transaction input form
+|   |-- ui/                          # Common UI elements
+|   |   |-- utils/                    # UI utilities
+|   |   |   `-- animations.ts         # Animation utilities
+|   |   |-- AchievementCard.tsx       # Achievement display component
+|   |   |-- AchievementUnlock.tsx     # Achievement unlock modal
+|   |   |-- Badge.tsx                 # Badge component
+|   |   |-- BudgetInput.tsx           # Budget input component
+|   |   |-- Button.tsx               # Reusable button component
+|   |   |-- Card.tsx                 # Card component for displaying content
+|   |   |-- CategoryPicker.tsx        # Category selection component
+|   |   |-- CircularProgress.tsx      # Progress indicator component
+|   |   |-- ConfettiExplosion.tsx     # Celebration animation
+|   |   |-- DatePicker.tsx            # Date selection component
+|   |   |-- Input.tsx                # Input component with validation
+|   |   |-- RecurringTransactionInput.tsx  # Recurring transaction form
+|   |   |-- SegmentedControl.tsx      # Segmented control component
+|   |   |-- StatCard.tsx              # Statistics card component
+|   |   |-- TransactionCard.tsx       # Transaction display component
+|   |   |-- TransactionList.tsx       # Transaction list component
+|   |   `-- index.ts                  # UI components exports
+|   |-- EditScreenInfo.tsx            # Screen info editor
+|   |-- ExternalLink.tsx              # External link component
+|   |-- StyledText.tsx               # Text styling component
+|   |-- Themed.tsx                   # Theme-aware components
+|   |-- __tests__/                   # Test files
+|   |   `-- StyledText-test.js       # Text component tests
+|   |-- useClientOnlyValue.ts        # Client-side value hook
+|   |-- useClientOnlyValue.web.ts    # Web-specific client value hook
+|   |-- useColorScheme.ts            # Color scheme hook
+|   `-- useColorScheme.web.ts        # Web-specific color scheme hook
+|-- constants/                       # Application constants
+|   `-- Colors.ts                    # Color definitions
+|-- context/                        # Global context providers
+|   |-- auth.tsx                    # Authentication context
+|   |-- settings-context.tsx        # Settings context
+|   |-- settings.tsx                # Settings provider
+|   |-- supabase-context.tsx        # Supabase context
+|   |-- supabase.tsx                # Supabase provider
+|   |-- user-context.tsx            # User context
+|   `-- user.tsx                    # User provider
+|-- lib/                           # Core library code
+|   |-- hooks/                      # Custom React hooks
+|   |   |-- queries.ts              # Query-related hooks
+|   |   |-- use-achievement-progress.ts # Achievement tracking hook
+|   |   |-- use-rewards.ts          # Rewards system hook
+|   |   |-- use-supabase-auth.ts    # Supabase auth hook
+|   |   |-- use-supabase.ts         # Supabase client hook
+|   |   |-- use-user.ts             # User management hook
+|   |   `-- useCategories.ts        # Categories management hook
+|   |-- services/                   # Business logic services
+|   |   |-- budget-service.ts       # Budget management service
+|   |   |-- rewards-service.ts      # Rewards system service
+|   |   `-- transaction.service.ts   # Transaction management service
+|   |-- supabase/                   # Supabase integration
+|   |   |-- api.ts                  # API endpoints
+|   |   `-- client.ts               # Supabase client configuration
+|   |-- types/                      # TypeScript type definitions
+|   |   |-- budget.ts               # Budget-related types
+|   |   `-- database.ts             # Database schema types
+|   |-- utils/                      # Utility functions
+|   |   `-- currency.ts             # Currency formatting utilities
+|   |-- validation/                 # Data validation
+|   |   `-- budget-schema.ts        # Budget validation schema
+|   |-- cache.ts                    # Caching logic
+|   |-- database.ts                 # Database configuration
+|   |-- enhanced-hooks.ts           # Enhanced React hooks
+|   |-- hooks.ts                    # Common hooks
+|   |-- query-client.ts             # Query client configuration
+|   `-- supabase.ts                 # Supabase configuration
+|-- supabase/                      # Supabase configuration
+|   `-- migrations/                 # Database migrations
+|       `-- 20250113_initial_schema.sql # Initial database schema
+|-- theme/                         # Theme configuration
+|   |-- ThemeProvider.tsx          # Theme provider component
+|   |-- index.ts                   # Theme exports
+|   `-- theme.config.ts            # Theme configuration
+|-- android/                       # Android native code
+|-- ios/                          # iOS native code
+|-- app.config.ts                 # Expo configuration
+|-- app.json                      # App metadata
+|-- expo-env.d.ts                 # Expo environment types
+|-- implementation.md             # Implementation documentation
+|-- requirements.md               # Project requirements
+|-- tree.md                      # Project structure documentation
+`-- tsconfig.json                # TypeScript configuration
 
-  State Management
-  - Use React Context for theming and global state.
-  - Leverage Supabase for data management and real-time updates.
-  - Handle URL search parameters using Expo Router's built-in functionality.
+## Comments
+- make sure to ALWAYS include comments in your code; it makes your code more readable and maintainable
+- Any new junior dev should be able to read and understand the codebase.
 
-Do not start expo servers on your own, i will do those in a separate terminal application. Just provide me the promt and i will do it myself. You can run other terminal commands.
+## Important
+- Always include the file path and name in each file's header for example: `# File: components/transaction/new.tsx`
+- Always check if a current function or file exists before creating a new one
 
-  Error Handling and Validation
-  - Use Zod for runtime validation and error handling.
-  - Implement proper error logging using Sentry or a similar service.
-  - Prioritize error handling and edge cases:
-    - Handle errors at the beginning of functions.
-    - Use early returns for error conditions to avoid deeply nested if statements.
-    - Avoid unnecessary else statements; use if-return pattern instead.
-    - Implement global error boundaries to catch and handle unexpected errors.
-  - Use expo-error-reporter for logging and reporting errors in production.
+## Code Standards
+- Use TypeScript with strict mode and functional components
+- Follow Prettier configuration for consistent formatting
+- Use descriptive variable names (isLoading, hasError)
+- Implement early returns and avoid nested conditionals
+- Add comprehensive comments for code clarity
 
-  Testing
-  - Write unit tests using Jest and React Native Testing Library.
-  - Implement integration tests for critical user flows using Detox.
-  - Use Expo's testing tools for running tests in different environments.
-  - Consider snapshot testing for components to ensure UI consistency.
+## UI Components
+- Use React Native Paper for Material Design
+- Leverage existing components from /components/ui/
+- Follow existing patterns in TransactionCard, StatCard, and BudgetInput
+- Use react-native-reanimated for animations (see ConfettiExplosion.tsx)
+- Ensure accessibility with React Native Paper props
 
-  Security
-  - Sanitize user inputs to prevent XSS attacks.
-  - Use AsyncStorage for persistent data storage.
-  - Ensure secure communication with Supabase using proper authentication.
-  - Use Expo's Security guidelines to protect your app: https://docs.expo.dev/guides/security/
+## State Management
+- Use React Context for global state (see context/)
+- Leverage TanStack Query for Supabase data fetching
+- Follow patterns in settings-context.tsx and user-context.tsx
 
-  Layout Components
-  - Use custom layout components for consistent UI:
-    - Container: Safe area and scroll handling
-    - Header: Customizable navigation header
-    - Screen: Combined container and header
-    - BottomBar: Tab navigation
-    - FAB: Floating action button
-    - Modal: Custom modal dialogs
-    - Drawer: Side navigation
-    - Toast & Snackbar: User notifications
-    - ActionSheet: iOS-style options
-    - LoadingOverlay: Loading states
-    - EmptyState & ErrorState: Status displays
-    - ProgressBar: Visual progress tracking
+## Error Handling
+- Use Zod for form validation (see transaction/new.tsx)
+- Implement error boundaries and EmptyState components
+- Follow error handling patterns in ErrorState.tsx
+- Use early returns for error conditions
 
-  Key Conventions
-  1. Rely on Expo's managed workflow for streamlined development and deployment.
-  2. Prioritize Mobile Web Vitals (Load Time, Jank, and Responsiveness).
-  3. Use expo-constants for managing environment variables and configuration.
-  4. Use expo-permissions to handle device permissions gracefully.
-  5. Implement expo-updates for over-the-air (OTA) updates.
-  6. Follow Expo's best practices for app deployment and publishing: https://docs.expo.dev/distribution/introduction/
-  7. Ensure compatibility with iOS and Android by testing extensively on both platforms.
+## Performance
+- Memoize expensive calculations with useMemo
+- Use useCallback for function props
+- Implement proper list virtualization
+- Follow lazy loading patterns in existing components
 
-  API Documentation
-  - Use Expo's official documentation for setting up and configuring your projects: https://docs.expo.dev/
-  - Follow React Native Paper documentation for component usage: https://callstack.github.io/react-native-paper/
+## Security
+- Use Supabase auth patterns from auth-context.tsx
+- Follow existing env variable structure
+- Implement proper input validation
+- Use secure storage for sensitive data
 
-  Refer to Expo's documentation for detailed information on Views, Blueprints, and Extensions for best practices.
+## Important
+- Always include the file path and name in each file's header for example: `# File: components/transaction/new.tsx`
+- Always check if a current function or file exists before creating a new one

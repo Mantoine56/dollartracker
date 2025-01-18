@@ -45,6 +45,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export default UserProvider;
+
 export function useUser() {
   const context = useContext(UserContext);
   if (!context) {
