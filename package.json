@@ -7,10 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
-  },
-  "jest": {
-    "preset": "jest-expo"
+    "test": "jest"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
@@ -36,7 +33,7 @@
     "expo-splash-screen": "^0.29.20",
     "expo-status-bar": "~2.0.1",
     "expo-system-ui": "~4.0.7",
-    "expo-web-browser": "~14.0.2",
+    "expo-web-browser": "^14.0.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.6",
@@ -50,17 +47,35 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "^15.11.1",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-web": "~0.19.13",
     "victory-native": "^41.15.0",
     "yup": "^1.6.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
+    "@babel/plugin-transform-export-namespace-from": "^7.25.9",
+    "@babel/plugin-transform-flow-strip-types": "^7.26.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
+    "@babel/plugin-transform-runtime": "^7.25.9",
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-flow": "^7.25.9",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "@babel/runtime": "^7.26.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.0.1",
+    "@types/jest": "^29.5.14",
     "@types/react": "~18.3.12",
-    "jest": "^29.2.1",
-    "jest-expo": "~52.0.3",
+    "babel-jest": "^29.7.0",
+    "babel-preset-expo": "^12.0.6",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-expo": "^52.0.3",
+    "react-native-web": "^0.19.13",
     "react-test-renderer": "18.3.1",
+    "ts-jest": "^29.2.5",
     "typescript": "~5.3.3"
   },
   "private": true

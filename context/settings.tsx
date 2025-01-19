@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useReducer, useEffect } from 'react';
+import { createSafeContext } from './utils/create-safe-context';
+import { useCallback, useEffect, useReducer, useRef, useMemo } from 'react';
 import { useUser } from './user';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from './supabase';
 
 interface SettingsState {
   theme: 'system' | 'light' | 'dark';
@@ -33,23 +34,25 @@ type SettingsAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_SAVING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SYNC_SUCCESS' }
-  | { type: 'REVERT_SETTINGS'; payload: Partial<SettingsState> };
+  | { type: 'SYNC_SUCCESS' };
 
 function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {
   switch (action.type) {
     case 'SET_SETTINGS':
-      return { ...state, ...action.payload };
+      return {
+        ...state,
+        ...action.payload,
+        error: null,
+        lastSynced: new Date(),
+      };
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'SET_SAVING':
       return { ...state, isSaving: action.payload };
     case 'SET_ERROR':
-      return { ...state, error: action.payload };
+      return { ...state, error: action.payload, isLoading: false, isSaving: false };
     case 'SYNC_SUCCESS':
       return { ...state, lastSynced: new Date() };
-    case 'REVERT_SETTINGS':
-      return { ...state, ...action.payload };
     default:
       return state;
   }
@@ -61,159 +64,112 @@ interface SettingsContextValue {
   resetError: () => void;
 }
 
-const SettingsContext = createContext<SettingsContextValue | null>(null);
+const [SettingsProvider, useSettings] = createSafeContext<SettingsContextValue>({
+  name: 'Settings',
+  validateValue: (value) => !!value.state,
+});
 
-export function useSettings() {
-  const context = useContext(SettingsContext);
-  if (!context) {
-    throw new Error('useSettings must be used within a SettingsProvider');
-  }
-  return context;
-}
-
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
+function SettingsProviderComponent({ children }: { children: React.ReactNode }) {
+  const { supabase } = useSupabase();
+  const { profile } = useUser();
   const [state, dispatch] = useReducer(settingsReducer, initialState);
-  const { user } = useUser();
-
-  const loadSettings = useCallback(async () => {
-    if (!user) return;
-    
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('Creating default settings for new user');
-          const defaultSettings = {
-            id: user.id,
-            user_id: user.id,
-            theme: initialState.theme,
-            notifications_enabled: initialState.notificationsEnabled,
-            email_notifications_enabled: initialState.emailNotificationsEnabled,
-            custom_budget_period: initialState.customBudgetPeriod,
-            daily_budget: initialState.dailyBudget,
-            export_preferences: initialState.exportPreferences,
-          };
-          
-          console.log('Default settings object:', defaultSettings);
-          
-          const { error: insertError, data: insertedData } = await supabase
-            .from('settings')
-            .insert([defaultSettings])
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('Error creating default settings:', insertError);
-            throw insertError;
-          }
-
-          console.log('Successfully inserted settings:', insertedData);
-
-          dispatch({
-            type: 'SET_SETTINGS',
-            payload: {
-              theme: insertedData.theme,
-              notificationsEnabled: insertedData.notifications_enabled,
-              emailNotificationsEnabled: insertedData.email_notifications_enabled,
-              customBudgetPeriod: insertedData.custom_budget_period,
-              dailyBudget: insertedData.daily_budget,
-              exportPreferences: insertedData.export_preferences,
-            },
-          });
-        } else {
-          throw error;
-        }
-      } else if (data) {
-        console.log('Found existing settings:', data);
-        dispatch({
-          type: 'SET_SETTINGS',
-          payload: {
-            theme: data.theme,
-            notificationsEnabled: data.notifications_enabled,
-            emailNotificationsEnabled: data.email_notifications_enabled,
-            customBudgetPeriod: data.custom_budget_period,
-            dailyBudget: data.daily_budget,
-            exportPreferences: data.export_preferences,
-          },
-        });
-      }
-      
-      dispatch({ type: 'SYNC_SUCCESS' });
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      const message = error instanceof Error ? error.message : 'Failed to load settings';
-      dispatch({ type: 'SET_ERROR', payload: message });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, [user]);
-
-  const updateSettings = async (newSettings: Partial<Omit<SettingsState, 'isLoading' | 'isSaving' | 'error' | 'lastSynced'>>) => {
-    if (!user) return;
-
-    const previousState = {
-      theme: state.theme,
-      notificationsEnabled: state.notificationsEnabled,
-      emailNotificationsEnabled: state.emailNotificationsEnabled,
-      customBudgetPeriod: state.customBudgetPeriod,
-      dailyBudget: state.dailyBudget,
-      exportPreferences: state.exportPreferences,
-    };
-
-    try {
-      const updateData = {
-        id: user.id,
-        user_id: user.id,
-        theme: newSettings.theme ?? state.theme,
-        notifications_enabled: newSettings.notificationsEnabled ?? state.notificationsEnabled,
-        email_notifications_enabled: newSettings.emailNotificationsEnabled ?? state.emailNotificationsEnabled,
-        custom_budget_period: newSettings.customBudgetPeriod ?? state.customBudgetPeriod,
-        daily_budget: newSettings.dailyBudget ?? state.dailyBudget,
-        export_preferences: newSettings.exportPreferences ?? state.exportPreferences,
-      };
-
-      console.log('Updating settings with:', updateData);
-
-      dispatch({ type: 'SET_SETTINGS', payload: newSettings });
-      dispatch({ type: 'SET_SAVING', payload: true });
-
-      const { error } = await supabase
-        .from('settings')
-        .upsert(updateData);
-
-      if (error) throw error;
-      
-      console.log('Successfully updated settings');
-      console.log('Current theme:', state.theme);
-      dispatch({ type: 'SYNC_SUCCESS' });
-    } catch (error) {
-      console.error('Error updating settings:', error);
-      dispatch({ type: 'REVERT_SETTINGS', payload: previousState });
-      const message = error instanceof Error ? error.message : 'Failed to update settings';
-      dispatch({ type: 'SET_ERROR', payload: message });
-    } finally {
-      dispatch({ type: 'SET_SAVING', payload: false });
-    }
-  };
-
-  const resetError = () => dispatch({ type: 'SET_ERROR', payload: null });
+  const isMounted = useRef(true);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (user) {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const safeDispatch = useCallback((action: SettingsAction) => {
+    if (isMounted.current) {
+      dispatch(action);
+    }
+  }, []);
+
+  const resetError = useCallback(() => {
+    safeDispatch({ type: 'SET_ERROR', payload: null });
+  }, [safeDispatch]);
+
+  const loadSettings = useCallback(async () => {
+    if (!profile?.id) {
+      safeDispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', profile.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data && isMounted.current) {
+        safeDispatch({ type: 'SET_SETTINGS', payload: data });
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        safeDispatch({
+          type: 'SET_ERROR',
+          payload: error instanceof Error ? error.message : 'Failed to load settings'
+        });
+      }
+    } finally {
+      if (isMounted.current) {
+        safeDispatch({ type: 'SET_LOADING', payload: false });
+      }
+    }
+  }, [profile?.id, supabase, safeDispatch]);
+
+  const updateSettings = useCallback(async (
+    settings: Partial<Omit<SettingsState, 'isLoading' | 'isSaving' | 'error' | 'lastSynced'>>
+  ) => {
+    if (!profile?.id) return;
+
+    safeDispatch({ type: 'SET_SAVING', payload: true });
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update(settings)
+        .eq('user_id', profile.id);
+
+      if (error) throw error;
+
+      if (isMounted.current) {
+        safeDispatch({ type: 'SET_SETTINGS', payload: settings });
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        safeDispatch({
+          type: 'SET_ERROR',
+          payload: error instanceof Error ? error.message : 'Failed to update settings'
+        });
+        throw error; // Re-throw to allow error handling in tests
+      }
+    } finally {
+      if (isMounted.current) {
+        safeDispatch({ type: 'SET_SAVING', payload: false });
+      }
+    }
+  }, [profile?.id, supabase, safeDispatch]);
+
+  useEffect(() => {
+    if (isInitialMount.current && profile?.id) {
+      isInitialMount.current = false;
       loadSettings();
     }
-  }, [user, loadSettings]);
+  }, [profile?.id, loadSettings]);
 
-  return (
-    <SettingsContext.Provider value={{ state, updateSettings, resetError }}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  const value = useMemo(() => ({
+    state,
+    updateSettings,
+    resetError,
+  }), [state, updateSettings, resetError]);
+
+  return <SettingsProvider value={value}>{children}</SettingsProvider>;
 }
+
+export { SettingsProviderComponent as SettingsProvider, useSettings };

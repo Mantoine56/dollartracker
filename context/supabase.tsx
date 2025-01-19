@@ -1,26 +1,33 @@
-import React, { createContext } from 'react';
+import { createSafeContext } from './utils/create-safe-context';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import { useMemo } from 'react';
 
-interface SupabaseContextType {
+interface SupabaseContextValue {
   supabase: SupabaseClient;
+  isReady: boolean;
 }
 
-export const SupabaseContext = createContext<SupabaseContextType | null>(null);
+const [SupabaseProvider, useSupabase] = createSafeContext<SupabaseContextValue>({
+  name: 'Supabase',
+  validateValue: (value) => !!value.supabase,
+});
 
-interface SupabaseProviderProps {
-  children: React.ReactNode;
-}
-
-export function SupabaseProvider({ children }: SupabaseProviderProps) {
-  const supabase = createClient(
-    Constants.expoConfig?.extra?.supabaseUrl || '',
-    Constants.expoConfig?.extra?.supabaseAnonKey || ''
+function SupabaseProviderComponent({ children }: { children: React.ReactNode }) {
+  const supabase = useMemo(() => 
+    createClient(
+      Constants.expoConfig?.extra?.supabaseUrl || '',
+      Constants.expoConfig?.extra?.supabaseAnonKey || ''
+    ),
+    [] // Create once and never recreate
   );
 
-  return (
-    <SupabaseContext.Provider value={{ supabase }}>
-      {children}
-    </SupabaseContext.Provider>
-  );
+  const value = useMemo(() => ({
+    supabase,
+    isReady: true,
+  }), [supabase]);
+
+  return <SupabaseProvider value={value}>{children}</SupabaseProvider>;
 }
+
+export { SupabaseProviderComponent as SupabaseProvider, useSupabase };

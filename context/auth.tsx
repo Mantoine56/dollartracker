@@ -1,180 +1,127 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createSafeContext } from './utils/create-safe-context';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { useSupabase } from './supabase';
 import * as Linking from 'expo-linking';
+import { useStableCallback, useStableValue } from './utils/use-stable-value';
+import { useEffect, useState } from 'react';
 
-type AuthContextType = {
+interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  error: Error | null;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
-};
+  resetError: () => void;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const [AuthProvider, useAuth] = createSafeContext<AuthContextValue>({
+  name: 'Auth',
+  validateValue: (value) => typeof value.loading === 'boolean',
+});
 
 const redirectUrl = Linking.createURL('/(auth)/confirm');
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+function AuthProviderComponent({ children }: { children: React.ReactNode }) {
+  const { supabase } = useSupabase();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
+  // Stable callbacks
+  const resetError = useStableCallback(() => setError(null), []);
+
+  const signOut = useStableCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to sign out'));
+    }
+  }, [supabase]);
+
+  const signInWithGoogle = useStableCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to sign in with Google'));
+    }
+  }, [supabase]);
+
+  const signInWithApple = useStableCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: { redirectTo: redirectUrl },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to sign in with Apple'));
+    }
+  }, [supabase]);
+
+  const signInWithEmail = useStableCallback(async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to sign in with email'));
+    }
+  }, [supabase]);
+
+  const signUpWithEmail = useStableCallback(async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirectUrl },
+      });
+      if (error) throw error;
+      return { needsEmailConfirmation: true };
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Failed to sign up'));
+      return { needsEmailConfirmation: false };
+    }
+  }, [supabase]);
+
+  // Session management
   useEffect(() => {
-    // Check active sessions and subscribe to auth changes
     supabase.auth.getSession().then(({ data: { session } }) => {
-      try {
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error setting session:', error);
-      } finally {
-        setLoading(false);
-      }
-    }).catch(error => {
-      console.error('Error getting session:', error);
+      setSession(session);
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      try {
-        setSession(session);
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
-      } finally {
-        setLoading(false);
-      }
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email to confirm your account before signing in.');
-        }
-        throw error;
-      }
-
-      if (!data.user?.email_confirmed_at) {
-        throw new Error('Please confirm your email before signing in.');
-      }
-    } catch (error: any) {
-      console.error('Error signing in with email:', error);
-      throw error;
-    }
-  };
-
-  const signUpWithEmail = async (email: string, password: string) => {
-    try {
-      const { error, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-      
-      if (error) throw error;
-
-      if (data.user) {
-        // Call our Edge Function to create default categories
-        const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/create-default-categories`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ user_id: data.user.id }),
-        });
-
-        if (!response.ok) {
-          console.warn('Failed to create default categories:', await response.text());
-        }
-      }
-
-      return { needsEmailConfirmation: true };
-    } catch (error: any) {
-      console.error('Error signing up with email:', error);
-      throw error;
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      throw error;
-    }
-  };
-
-  const signInWithApple = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing in with Apple:', error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
-  const value = {
+  const value = useStableValue({
     user,
     session,
     loading,
+    error,
     signOut,
     signInWithGoogle,
     signInWithApple,
     signInWithEmail,
     signUpWithEmail,
-  };
+    resetError,
+  });
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthProvider value={value}>{children}</AuthProvider>;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export default AuthProvider;
+export { AuthProviderComponent as AuthProvider, useAuth };
