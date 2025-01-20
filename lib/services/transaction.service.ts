@@ -56,7 +56,20 @@ export class TransactionService {
   async getDailyTransactions(userId: string, date: Date) {
     try {
       console.log('==================== TRANSACTION SERVICE ====================');
-      console.log('1. Fetching transactions for date:', date.toISOString());
+      
+      // Ensure we're working with a date in the user's timezone
+      const userDate = new Date(date);
+      userDate.setHours(0, 0, 0, 0);
+      
+      const nextDay = new Date(userDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      console.log('1. Fetching transactions for date:', {
+        requestedDate: date.toISOString(),
+        queryStartDate: userDate.toISOString(),
+        queryEndDate: nextDay.toISOString(),
+      });
+      
       console.log('User ID:', userId);
 
       // First get transactions
@@ -64,8 +77,8 @@ export class TransactionService {
         .from('daily_transactions')
         .select('*')
         .eq('user_id', userId)
-        .gte('transaction_time', date.toISOString().split('T')[0])
-        .lte('transaction_time', new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .gte('transaction_time', userDate.toISOString())
+        .lt('transaction_time', nextDay.toISOString())
         .order('transaction_time', { ascending: false });
 
       if (txError) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button, Surface, Portal, Modal, TextInput } from 'react-native-paper';
 import { useCurrentBudget, useCreateBudget, useDailyTransactions, useAddTransaction } from '../../lib/enhanced-hooks';
@@ -11,8 +11,16 @@ export function BudgetDashboard() {
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Create a memoized date that updates only when the component mounts
+  const today = useMemo(() => {
+    const date = new Date();
+    // Ensure we're working with the start of the day in local time
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
+
   const { data: budget, isLoading: budgetLoading } = useCurrentBudget();
-  const { data: todayTransactions, isLoading: transactionsLoading } = useDailyTransactions(new Date());
+  const { data: todayTransactions, isLoading: transactionsLoading } = useDailyTransactions(today);
   const { mutate: createBudget, isLoading: createBudgetLoading } = useCreateBudget();
   const { mutate: addTransaction, isLoading: addTransactionLoading } = useAddTransaction();
 
@@ -21,6 +29,7 @@ export function BudgetDashboard() {
   const remainingBudget = dailyAllowance - totalSpentToday;
 
   console.log('Budget Dashboard State:', {
+    date: today.toISOString(),
     budget,
     dailyAllowance,
     totalSpentToday,
@@ -42,6 +51,7 @@ export function BudgetDashboard() {
       amount: parseFloat(amount),
       category: category || undefined,
       notes: notes || undefined,
+      date: today, // Use the same date context
     });
 
     // Reset form

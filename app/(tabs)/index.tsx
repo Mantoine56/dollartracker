@@ -13,9 +13,12 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const [selectedDate, setSelectedDate] = useState(new Date('2025-01-12T17:06:06-05:00'));
+  // Initialize with today's date at midnight in local time
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [selectedDate, setSelectedDate] = useState(today);
   const [showDateModal, setShowDateModal] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date('2025-01-12T17:06:06-05:00'));
+  const [tempDate, setTempDate] = useState(today);
 
   // Fetch real data
   const { data: budget, isLoading: budgetLoading } = useCurrentBudget();
@@ -44,8 +47,10 @@ export default function HomeScreen() {
   const showNextDay = () => {
     const nextDate = new Date(selectedDate);
     nextDate.setDate(nextDate.getDate() + 1);
-    const now = new Date('2025-01-12T17:06:06-05:00');
-    if (nextDate <= now) {
+    // Allow navigation up to today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (nextDate <= today) {
       setSelectedDate(nextDate);
     }
   };
@@ -100,7 +105,7 @@ export default function HomeScreen() {
               containerColor={theme.colors.background}
               iconColor={theme.colors.onSurfaceVariant}
               size={20}
-              disabled={new Date(selectedDate).setHours(0,0,0,0) >= new Date('2025-01-12T17:06:06-05:00').setHours(0,0,0,0)}
+              disabled={new Date(selectedDate).setHours(0,0,0,0) >= new Date().setHours(0,0,0,0)}
             />
           </View>
         </View>
