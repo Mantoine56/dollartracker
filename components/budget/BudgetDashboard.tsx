@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text, Button, Surface, Portal, Modal, TextInput } from 'react-native-paper';
 import { useCurrentBudget, useCreateBudget, useDailyTransactions, useAddTransaction } from '../../lib/enhanced-hooks';
 import { BudgetPeriod } from '../../types/database';
+import { BudgetCircle } from './BudgetCircle';
 
 export function BudgetDashboard() {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -16,11 +17,19 @@ export function BudgetDashboard() {
   const { mutate: addTransaction, isLoading: addTransactionLoading } = useAddTransaction();
 
   const totalSpentToday = todayTransactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
-  const remainingBudget = budget ? budget.budget_amount - totalSpentToday : 0;
+  const dailyAllowance = budget?.daily_allowance || 0;
+  const remainingBudget = dailyAllowance - totalSpentToday;
+
+  console.log('Budget Dashboard State:', {
+    budget,
+    dailyAllowance,
+    totalSpentToday,
+    remainingBudget
+  });
 
   const handleCreateBudget = async () => {
     await createBudget({
-      amount: 1000,
+      amount: 3000, // Monthly budget
       period: 'monthly' as BudgetPeriod,
       startDate: new Date(),
     });
@@ -53,16 +62,17 @@ export function BudgetDashboard() {
   return (
     <View style={styles.container}>
       <Surface style={styles.budgetCard}>
-        <Text variant="headlineMedium">Budget Overview</Text>
+        <Text variant="headlineMedium" style={styles.title}>Daily Budget</Text>
         {budget ? (
           <>
-            <Text variant="titleLarge">
-              Budget: ${budget.budget_amount.toFixed(2)}
+            <BudgetCircle amount={totalSpentToday} total={dailyAllowance} />
+            <Text variant="titleMedium" style={styles.budgetText}>
+              Daily Allowance: ${dailyAllowance.toFixed(2)}
             </Text>
-            <Text variant="titleMedium">
+            <Text variant="titleMedium" style={styles.budgetText}>
               Spent Today: ${totalSpentToday.toFixed(2)}
             </Text>
-            <Text variant="titleMedium">
+            <Text variant="titleMedium" style={styles.budgetText}>
               Remaining: ${remainingBudget.toFixed(2)}
             </Text>
           </>
@@ -89,19 +99,25 @@ export function BudgetDashboard() {
           </Button>
         </View>
 
-        {todayTransactions?.map((transaction) => (
-          <Surface key={transaction.id} style={styles.transactionItem}>
-            <View>
-              <Text variant="titleMedium">${transaction.amount.toFixed(2)}</Text>
-              {transaction.category && (
-                <Text variant="bodyMedium">{transaction.category}</Text>
-              )}
-            </View>
-            {transaction.notes && (
-              <Text variant="bodySmall">{transaction.notes}</Text>
-            )}
-          </Surface>
-        ))}
+        {todayTransactions?.length === 0 ? (
+          <Text style={styles.emptyText}>No transactions today</Text>
+        ) : (
+          todayTransactions?.map((transaction) => (
+            <Surface key={transaction.id} style={styles.transactionItem}>
+              <View style={styles.transactionRow}>
+                <View>
+                  <Text variant="titleMedium">${transaction.amount.toFixed(2)}</Text>
+                  {transaction.category && (
+                    <Text variant="bodyMedium">{transaction.category.name}</Text>
+                  )}
+                </View>
+                {transaction.notes && (
+                  <Text variant="bodySmall" style={styles.notes}>{transaction.notes}</Text>
+                )}
+              </View>
+            </Surface>
+          ))
+        )}
       </Surface>
 
       <Portal>
@@ -153,10 +169,17 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
+  title: {
+    textAlign: 'center',
+    marginBottom: 8,
+  },
   budgetCard: {
     padding: 16,
     borderRadius: 8,
     gap: 8,
+  },
+  budgetText: {
+    textAlign: 'center',
   },
   transactionsCard: {
     padding: 16,
@@ -167,11 +190,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   transactionItem: {
     padding: 12,
     borderRadius: 6,
-    gap: 4,
+  },
+  transactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notes: {
+    color: 'gray',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: 'gray',
+    fontStyle: 'italic',
   },
   modal: {
     backgroundColor: 'white',

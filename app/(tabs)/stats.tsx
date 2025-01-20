@@ -177,6 +177,20 @@ export default function StatsScreen() {
       fontSize: 12,
       color: theme.colors.outline,
     },
+    loadingContainer: {
+      height: 220,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      height: 220,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8,
+    },
+    emptyText: {
+      color: theme.colors.onSurfaceDisabled,
+    },
   });
 
   const getContextualColor = (value: number, threshold: number, isInverse: boolean = false) => {
@@ -399,6 +413,145 @@ export default function StatsScreen() {
     };
   };
 
+  const renderSpendingChart = () => {
+    if (isSpendingLoading) {
+      return (
+        <View style={[styles.chartCard, styles.loadingContainer]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      );
+    }
+
+    if (!chartData.datasets[0].data.length) {
+      return (
+        <Surface style={[styles.chartCard, styles.emptyContainer]}>
+          <MaterialCommunityIcons name="chart-line" size={48} color={theme.colors.onSurfaceDisabled} />
+          <Text variant="bodyLarge" style={styles.emptyText}>No spending data available</Text>
+        </Surface>
+      );
+    }
+
+    return (
+      <Surface style={styles.chartCard}>
+        <LineChart
+          data={chartData}
+          width={Dimensions.get('window').width - 64}
+          height={200}
+          chartConfig={{
+            backgroundColor: theme.colors.surface,
+            backgroundGradientFrom: theme.colors.surface,
+            backgroundGradientTo: theme.colors.surface,
+            decimalPlaces: 0,
+            color: (opacity = 1) => theme.colors.primary,
+            labelColor: (opacity = 1) => theme.colors.onSurface,
+            style: {
+              borderRadius: 8,
+            },
+            propsForDots: {
+              r: '6',
+              strokeWidth: '2',
+              stroke: theme.colors.primary
+            },
+            propsForLabels: {
+              fontSize: timeframe === 'month' ? 10 : 12,
+              rotation: timeframe === 'month' ? 45 : 0,
+            },
+            propsForBackgroundLines: {
+              strokeDasharray: [], // Solid lines
+              stroke: theme.colors.outlineVariant,
+              strokeWidth: 1,
+            },
+          }}
+          bezier
+          style={{
+            borderRadius: 8,
+            backgroundColor: theme.colors.surface,
+          }}
+          withVerticalLabels
+          withHorizontalLabels
+          withDots
+          withInnerLines
+          withOuterLines
+          yAxisLabel="$"
+          yAxisInterval={timeframe === 'month' ? 2 : 1}
+          formatYLabel={(value) => value.toString()}
+          getDotColor={(dataPoint, index) => theme.colors.primary}
+        />
+      </Surface>
+    );
+  };
+
+  const renderCategoryChart = () => {
+    if (isCategoryLoading) {
+      return (
+        <View style={[styles.chartCard, styles.loadingContainer]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      );
+    }
+
+    if (!categorySpending.length) {
+      return (
+        <Surface style={[styles.chartCard, styles.emptyContainer]}>
+          <MaterialCommunityIcons name="chart-pie" size={48} color={theme.colors.onSurfaceDisabled} />
+          <Text variant="bodyLarge" style={styles.emptyText}>No category data available</Text>
+        </Surface>
+      );
+    }
+
+    return categoryViewType === 'pie' ? (
+      <Surface style={styles.chartCard}>
+        <PieChart
+          data={categorySpending.map((category, index) => ({
+            name: category.name,
+            amount: category.amount,
+            color: theme.colors.primary,
+            legendFontColor: theme.colors.onSurface,
+          }))}
+          width={Dimensions.get('window').width - 64}
+          height={220}
+          chartConfig={{
+            color: (opacity = 1) => theme.colors.primary,
+          }}
+          accessor="amount"
+          backgroundColor="transparent"
+          paddingLeft="15"
+        />
+      </Surface>
+    ) : (
+      <Surface style={styles.chartCard}>
+        <View style={styles.categoryList}>
+          {categorySpending.map((category, index) => (
+            <View key={index} style={styles.categoryItem}>
+              <View style={styles.categoryNameContainer}>
+                <Text variant="bodyMedium" numberOfLines={1} style={styles.categoryName}>
+                  {category.name.length > 8 ? category.name.slice(0, 8) + '...' : category.name}
+                </Text>
+              </View>
+              <View style={[
+                styles.categoryBarContainer,
+                { backgroundColor: theme.colors.surfaceVariant }
+              ]}>
+                <View 
+                  style={[
+                    styles.categoryBar,
+                    { 
+                      width: `${category.relativeWidth}%`,
+                      backgroundColor: theme.colors.primary,
+                    }
+                  ]} 
+                />
+              </View>
+              <Text variant="bodyMedium" style={styles.categoryAmount}>
+                ${category.amount.toFixed(2)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </Surface>
+    );
+  };
+
   return (
     <Screen>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -457,50 +610,7 @@ export default function StatsScreen() {
               <Text variant="titleMedium" style={styles.chartTitle}>Spending Over Time</Text>
               <View style={styles.chartWrapper}>
                 <View style={styles.chartContainer}>
-                  <LineChart
-                    data={chartData}
-                    width={Dimensions.get('window').width - 64}
-                    height={200}
-                    chartConfig={{
-                      backgroundColor: theme.colors.surface,
-                      backgroundGradientFrom: theme.colors.surface,
-                      backgroundGradientTo: theme.colors.surface,
-                      decimalPlaces: 0,
-                      color: (opacity = 1) => theme.colors.primary,
-                      labelColor: (opacity = 1) => theme.colors.onSurface,
-                      style: {
-                        borderRadius: 8,
-                      },
-                      propsForDots: {
-                        r: '6',
-                        strokeWidth: '2',
-                        stroke: theme.colors.primary
-                      },
-                      propsForLabels: {
-                        fontSize: timeframe === 'month' ? 10 : 12,
-                        rotation: timeframe === 'month' ? 45 : 0,
-                      },
-                      propsForBackgroundLines: {
-                        strokeDasharray: [], // Solid lines
-                        stroke: theme.colors.outlineVariant,
-                        strokeWidth: 1,
-                      },
-                    }}
-                    bezier
-                    style={{
-                      borderRadius: 8,
-                      backgroundColor: theme.colors.surface,
-                    }}
-                    withVerticalLabels
-                    withHorizontalLabels
-                    withDots
-                    withInnerLines
-                    withOuterLines
-                    yAxisLabel="$"
-                    yAxisInterval={timeframe === 'month' ? 2 : 1}
-                    formatYLabel={(value) => value.toString()}
-                    getDotColor={(dataPoint, index) => theme.colors.primary}
-                  />
+                  {renderSpendingChart()}
                 </View>
               </View>
             </AnimatedSurface>
@@ -519,79 +629,7 @@ export default function StatsScreen() {
                   onPress={() => setCategoryViewType(prev => prev === 'bar' ? 'pie' : 'bar')}
                 />
               </View>
-              {categoryViewType === 'bar' ? (
-                <View style={styles.categoryList}>
-                  {categorySpending.map((category, index) => (
-                    <View key={index} style={styles.categoryItem}>
-                      <View style={styles.categoryNameContainer}>
-                        <Text variant="bodyMedium" numberOfLines={1} style={styles.categoryName}>
-                          {category.name.length > 8 ? category.name.slice(0, 8) + '...' : category.name}
-                        </Text>
-                      </View>
-                      <View style={[
-                        styles.categoryBarContainer,
-                        { backgroundColor: theme.colors.surfaceVariant }
-                      ]}>
-                        <View 
-                          style={[
-                            styles.categoryBar,
-                            { 
-                              width: `${category.relativeWidth}%`,
-                              backgroundColor: theme.colors.primary,
-                            }
-                          ]} 
-                        />
-                      </View>
-                      <Text variant="bodyMedium" style={styles.categoryAmount}>
-                        ${category.amount.toFixed(2)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.pieChartContainer}>
-                  <PieChart
-                    data={categorySpending.map((category, index) => {
-                      const colors = [
-                        theme.colors.primary, // Blue
-                        '#E57373', // Red
-                        '#81C784', // Green
-                        '#757575', // Gray
-                        '#FFB74D', // Orange
-                      ];
-                      
-                      // Format category name to be truncated if too long
-                      const displayName = category.name.length > 15 
-                        ? category.name.slice(0, 12) + '...'
-                        : category.name;
-                        
-                      return {
-                        name: displayName,
-                        legendLabel: `${displayName} - $${category.amount.toFixed(2)}`,
-                        amount: category.amount,
-                        color: colors[index % colors.length],
-                        legendFontColor: theme.colors.onSurface,
-                        legendFontSize: 12,
-                        population: category.amount,
-                      };
-                    })}
-                    width={Dimensions.get('window').width - 64}
-                    height={220}
-                    chartConfig={{
-                      color: (opacity = 1) => theme.colors.onSurface,
-                      labelColor: (opacity = 1) => theme.colors.onSurface,
-                    }}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    center={[10, 0]}
-                    hasLegend={true}
-                    absolute
-                    avoidFalseZero
-                    formatLegendLabel={(label, entry) => entry.legendLabel}
-                  />
-                </View>
-              )}
+              {renderCategoryChart()}
             </AnimatedSurface>
 
             <AnimatedSurface 

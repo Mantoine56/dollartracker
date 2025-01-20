@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/auth';
-import {
-  budgetService,
-  transactionService,
-  settingsService,
-  statsService,
-  rewardsService,
-} from './database';
+import { useSupabase } from '../context/supabase';
+import { createTransactionService } from './services/transaction.service';
 import { cacheManager } from './cache';
 import type {
   Budget,
@@ -38,15 +33,17 @@ interface UseMutationResult<T, TVariables> {
  */
 export function useCurrentBudget(): UseQueryResult<Budget> {
   const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
   const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['budgets', user?.id, 'current'],
     queryFn: async () => {
-      if (!user?.id) return null;
-      return budgetService.getCurrentBudget(user.id);
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      return service.getCurrentBudget(user.id);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isReady,
   });
 }
 
@@ -58,103 +55,131 @@ interface CreateBudgetVariables {
 
 export function useCreateBudget(): UseMutationResult<Budget, CreateBudgetVariables> {
   const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ amount, period, startDate }: CreateBudgetVariables) => {
-      if (!user?.id) return null;
-      return budgetService.createBudget(user.id, amount, period, startDate);
+  const mutation = useMutation({
+    mutationFn: async (variables: CreateBudgetVariables) => {
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      return service.createBudget(user.id, variables);
     },
     onSuccess: () => {
-      // Invalidate and refetch budget queries
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, 'current'] });
+      queryClient.invalidateQueries(['budgets']);
     },
   });
+
+  return {
+    mutate: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+    reset: mutation.reset,
+  };
 }
 
 /**
  * Enhanced Transaction Hooks
  */
-export interface AddTransactionVariables {
+interface AddTransactionVariables {
   amount: number;
   category_id?: string;
   notes?: string;
   date?: Date;
 }
 
-export function useAddTransaction() {
+export function useAddTransaction(): UseMutationResult<DailyTransaction, AddTransactionVariables> {
   const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ amount, category_id, notes, date }: AddTransactionVariables) => {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-      return transactionService.addTransaction(user.id, amount, category_id, notes, date) as Promise<DailyTransaction>;
+  const mutation = useMutation({
+    mutationFn: async (variables: AddTransactionVariables) => {
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      return service.addTransaction(user.id, variables);
     },
     onSuccess: () => {
-      // Invalidate and refetch transactions queries
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      // Also invalidate budget query since it affects daily allowance
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, 'current'] });
+      queryClient.invalidateQueries(['transactions']);
+      queryClient.invalidateQueries(['stats']);
     },
   });
+
+  return {
+    mutate: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+    reset: mutation.reset,
+  };
 }
 
-export function useDailyTransactions(date: Date) {
+export function useDailyTransactions(date: Date): UseQueryResult<DailyTransaction[]> {
   const { user } = useAuth();
-  
-  return useQuery({
-    queryKey: ['transactions', date.toISOString()],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      return transactionService.getDailyTransactions(user.id, date);
-    },
-    enabled: !!user?.id,
-  });
-}
-
-/**
- * Enhanced Stats Hooks
- */
-export function useSpendingByTimeframe(timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
-  const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
 
   return useQuery({
-    queryKey: ['spending', user?.id, timeframe, startDate?.toISOString(), endDate?.toISOString()],
+    queryKey: ['transactions', user?.id, date.toISOString()],
     queryFn: async () => {
-      if (!user?.id) return null;
-      return statsService.getSpendingByTimeframe(user.id, timeframe, startDate, endDate);
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      return service.getDailyTransactions(user.id, date);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isReady,
   });
 }
 
-export function useSpendingByCategory(timeframe: 'week' | 'month' | 'custom', startDate?: Date, endDate?: Date) {
+// Enhanced Stats Hooks
+export function useSpendingByTimeframe(
+  timeframe: 'week' | 'month' | 'custom',
+  startDate?: Date,
+  endDate?: Date
+): UseQueryResult<Stats['spending_by_timeframe']> {
   const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
 
   return useQuery({
-    queryKey: ['spending-by-category', user?.id, timeframe, startDate?.toISOString(), endDate?.toISOString()],
+    queryKey: ['stats', user?.id, 'spending_by_timeframe', timeframe, startDate, endDate],
     queryFn: async () => {
-      if (!user?.id) return null;
-      return statsService.getSpendingByCategory(user.id, timeframe, startDate, endDate);
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      const data = await service.getSpendingByTimeframe(user.id, timeframe, startDate, endDate);
+      return data || { labels: [], datasets: [{ data: [] }] };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isReady,
   });
 }
 
-export function useDailySpendingPatterns() {
+export function useSpendingByCategory(
+  timeframe: 'week' | 'month' | 'custom',
+  startDate?: Date,
+  endDate?: Date
+): UseQueryResult<Stats['spending_by_category']> {
   const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
 
   return useQuery({
-    queryKey: ['spending-patterns', user?.id],
+    queryKey: ['stats', user?.id, 'spending_by_category', timeframe, startDate, endDate],
     queryFn: async () => {
-      if (!user?.id) return null;
-      return statsService.getDailySpendingPatterns(user.id);
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      const data = await service.getSpendingByCategory(user.id, timeframe, startDate, endDate);
+      return data || { labels: [], datasets: [{ data: [] }] };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && isReady,
   });
 }
 
-// ... Similar enhancements for other hooks ...
+export function useDailySpendingPatterns(): UseQueryResult<Stats['daily_patterns']> {
+  const { user } = useAuth();
+  const { supabase, isReady } = useSupabase();
+
+  return useQuery({
+    queryKey: ['stats', user?.id, 'daily_patterns'],
+    queryFn: async () => {
+      if (!user?.id || !isReady) return null;
+      const service = createTransactionService(supabase);
+      const data = await service.getDailySpendingPatterns(user.id);
+      return data || { labels: [], datasets: [{ data: [] }] };
+    },
+    enabled: !!user?.id && isReady,
+  });
+}

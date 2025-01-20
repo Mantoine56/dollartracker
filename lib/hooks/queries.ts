@@ -4,13 +4,13 @@ import { useAuth } from '../../context/auth';
 
 // Profile hooks
 export function useProfile() {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const userId = session?.user.id;
 
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: () => api.getProfile(userId!),
-    enabled: !!userId,
+    enabled: !!userId && !loading,
   });
 }
 
@@ -30,13 +30,14 @@ export function useUpdateProfile() {
 
 // Category hooks
 export function useCategories() {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const userId = session?.user.id;
 
   return useQuery({
     queryKey: ['categories', userId],
     queryFn: () => api.getCategories(userId!),
-    enabled: !!userId,
+    enabled: !!userId && !loading,
+    staleTime: 300000, // Categories change less frequently, keep for 5 minutes
   });
 }
 
@@ -82,13 +83,15 @@ export function useDeleteCategory() {
 
 // Transaction hooks
 export function useTransactions(options?: Parameters<typeof api.getTransactions>[1]) {
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const userId = session?.user.id;
 
   return useQuery({
     queryKey: ['transactions', userId, options],
     queryFn: () => api.getTransactions(userId!, options),
-    enabled: !!userId,
+    enabled: !!userId && !loading,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    retry: 2, // Retry failed requests twice
   });
 }
 

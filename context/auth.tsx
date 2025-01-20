@@ -1,9 +1,9 @@
 import { createSafeContext } from './utils/create-safe-context';
 import { Session, User } from '@supabase/supabase-js';
-import { useSupabase } from './supabase';
 import * as Linking from 'expo-linking';
 import { useStableCallback, useStableValue } from './utils/use-stable-value';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSupabase } from './supabase';
 
 interface AuthContextValue {
   user: User | null;
@@ -26,87 +26,138 @@ const [AuthProvider, useAuth] = createSafeContext<AuthContextValue>({
 const redirectUrl = Linking.createURL('/(auth)/confirm');
 
 function AuthProviderComponent({ children }: { children: React.ReactNode }) {
-  const { supabase } = useSupabase();
-  const [user, setUser] = useState<User | null>(null);
+  const { supabase, isReady } = useSupabase();
   const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Stable callbacks
-  const resetError = useStableCallback(() => setError(null), []);
-
-  const signOut = useStableCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to sign out'));
+  // Initialize auth state
+  useEffect(() => {
+    if (!isReady) {
+      return;
     }
-  }, [supabase]);
+
+    let mounted = true;
+    let authSubscription: { unsubscribe: () => void } | null = null;
+
+    const initialize = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (mounted) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+        }
+
+        // Set up auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            if (!mounted) return;
+
+            if (event === 'SIGNED_OUT') {
+              setSession(null);
+              setUser(null);
+            } else if (newSession) {
+              setSession(newSession);
+              setUser(newSession.user);
+            }
+          }
+        );
+
+        authSubscription = subscription;
+      } catch (err) {
+        if (mounted) {
+          setError(err as Error);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initialize();
+
+    return () => {
+      mounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
+  }, [isReady, supabase]);
+
+  const resetError = useCallback(() => setError(null), []);
 
   const signInWithGoogle = useStableCallback(async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: redirectUrl },
+        options: {
+          redirectTo: redirectUrl,
+        },
       });
       if (error) throw error;
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to sign in with Google'));
+    } catch (err) {
+      setError(err as Error);
+      throw err;
     }
-  }, [supabase]);
+  });
 
   const signInWithApple = useStableCallback(async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
-        options: { redirectTo: redirectUrl },
+        options: {
+          redirectTo: redirectUrl,
+        },
       });
       if (error) throw error;
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to sign in with Apple'));
+    } catch (err) {
+      setError(err as Error);
+      throw err;
     }
-  }, [supabase]);
+  });
 
   const signInWithEmail = useStableCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) throw error;
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to sign in with email'));
+    } catch (err) {
+      setError(err as Error);
+      throw err;
     }
-  }, [supabase]);
+  });
 
   const signUpWithEmail = useStableCallback(async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: redirectUrl },
+        options: {
+          emailRedirectTo: redirectUrl,
+        },
       });
       if (error) throw error;
       return { needsEmailConfirmation: true };
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to sign up'));
-      return { needsEmailConfirmation: false };
+    } catch (err) {
+      setError(err as Error);
+      throw err;
     }
-  }, [supabase]);
+  });
 
-  // Session management
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+  const signOut = useStableCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    }
+  });
 
   const value = useStableValue({
     user,
